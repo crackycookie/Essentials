@@ -4,9 +4,9 @@ version '8.0'
 
 sourceCompatibility = JavaVersion.VERSION_1_8
 
-configurations.all {
+/*configurations.all {
     resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
-}
+}*/
 
 repositories{
     mavenCentral()
@@ -25,9 +25,10 @@ test{
 compileJava {options.encoding = "UTF-8"}
 
 dependencies{
-    compileOnly "com.github.Anuken.Arc:arc-core:$targetversion"
-    compileOnly "com.github.Anuken.Mindustry:core:$targetversion"
-    //compileOnly files("C:\\Users\\cloud\\Desktop\\Mindustry-master\\core\\build\\libs\\core-release.jar")
+    //compileOnly "com.github.Anuken.Arc:arc-core:$targetversion"
+    //compileOnly "com.github.Anuken.Mindustry:core:$targetversion"
+    compileOnly files("C:\\Users\\cloud\\Downloads\\Mindustry-6.0\\core\\build\\libs\\core-release.jar")
+    compileOnly files("C:\\Users\\cloud\\Downloads\\Arc-master\\arc-core\\build\\libs\\arc-core-1.0.jar")
 
     // json
     compile group: 'org.hjson', name: 'hjson', version: '3.0.0'

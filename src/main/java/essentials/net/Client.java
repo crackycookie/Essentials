@@ -21,7 +21,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeUnit;
 
 import static essentials.Global.*;
-import static essentials.Main.*;
 import static mindustry.Vars.netServer;
 
 public class Client extends Thread{
@@ -33,6 +32,7 @@ public class Client extends Thread{
     public SecretKeySpec spec;
 
     private boolean disconnected = false;
+    public boolean server_active = false;
 
     public enum Request{
         bansync, chat, exit, unbanip, unbanid, datashare

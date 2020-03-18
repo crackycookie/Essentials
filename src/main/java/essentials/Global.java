@@ -9,6 +9,7 @@ import mindustry.core.Version;
 import mindustry.entities.type.Player;
 import mindustry.game.Team;
 import mindustry.gen.Call;
+import mindustry.gen.Playerc;
 import mindustry.world.Tile;
 import org.hjson.JsonObject;
 import org.hjson.JsonValue;
@@ -35,11 +36,12 @@ import java.util.ResourceBundle;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
-import static essentials.Main.*;
+import static essentials.Main.root;
 import static essentials.core.Log.writeLog;
 import static essentials.core.PlayerDB.PlayerData;
 import static essentials.core.PlayerDB.conn;
-import static mindustry.Vars.*;
+import static mindustry.Vars.mods;
+import static mindustry.Vars.world;
 
 public class Global {
     public static String plugin_version;
@@ -499,8 +501,8 @@ public class Global {
     }
 
     // 본인의 코어가 있는지 없는지 확인
-    public static boolean isNocore(Player player){
-        return Vars.state.teams.get(player.getTeam()).cores.isEmpty();
+    public static boolean isNocore(Playerc player){
+        return Vars.state.teams.get(player.team()).cores.isEmpty();
     }
 
     // 플레이어 지역 위치 확인
@@ -546,8 +548,8 @@ public class Global {
     }
 
     // 로그인 유무 확인 (DB)
-    public static boolean isLogin(Player player){
-        return PlayerData(player.uuid).isLogin;
+    public static boolean isLogin(Playerc player){
+        return PlayerData(player.uuid()).isLogin;
     }
 
     // 권한 확인
@@ -616,7 +618,7 @@ public class Global {
         return cipher.doFinal(data);
     }
 
-    public static boolean isduplicate(Player player){
+    public static boolean isduplicate(Playerc player){
         try {
             PreparedStatement stmt = conn.prepareStatement("SELECT uuid FROM players WHERE uuid = ?");
             stmt.setString(1, player.uuid);

@@ -6,6 +6,7 @@ import mindustry.Vars;
 import mindustry.entities.type.Player;
 import mindustry.game.Team;
 import mindustry.gen.Call;
+import mindustry.gen.Playerc;
 import org.hjson.JsonObject;
 import org.mindrot.jbcrypt.BCrypt;
 
@@ -21,7 +22,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static essentials.Global.*;
-import static essentials.Main.*;
+import static essentials.Main.root;
 import static essentials.Threads.ColorNick;
 import static essentials.special.DriverLoader.H2URL;
 import static mindustry.Vars.netServer;
@@ -315,7 +316,7 @@ public class PlayerDB {
 	public static void addtimeban(String name, String uuid, int bantimeset, String reason) {
         // Write ban data
         try {
-            data.banned.add(new PluginData.banned(LocalDateTime.now().plusHours(bantimeset),name,uuid,reason));
+            pluginData.banned.add(new PluginData.banned(LocalDateTime.now().plusHours(bantimeset),name,uuid,reason));
             PlayerData target = PlayerData(uuid);
             target.bantime = getTime();
             target.bantimeset = bantimeset;
@@ -330,15 +331,15 @@ public class PlayerDB {
         if (!player.error) {
             if (ban) {
                 player.banned = true;
-                data.banned.add(new PluginData.banned(LocalDateTime.now().plusYears(1000),player.name,uuid,reason));
+                pluginData.banned.add(new PluginData.banned(LocalDateTime.now().plusYears(1000),player.name,uuid,reason));
                 PlayerDataSet(player);
                 return true;
             } else {
                 player.banned = false;
                 PlayerDataSet(player);
-                for(int a=0;a<data.banned.size();a++){
-                    if(data.banned.get(a).uuid.equals(uuid)){
-                        data.banned.remove(a);
+                for(int a = 0; a< pluginData.banned.size(); a++){
+                    if(pluginData.banned.get(a).uuid.equals(uuid)){
+                        pluginData.banned.remove(a);
                         break;
                     }
                 }
@@ -540,7 +541,7 @@ public class PlayerDB {
 
                         player.sendMessage("Mail sented! Please check your mail!");
                         player.sendMessage("Enter the /email command to enter your email verification number.");
-                        data.emailauth.add(new PluginData.maildata(player.uuid, buf.toString(), id, pw, parameter[0]));
+                        pluginData.emailauth.add(new PluginData.maildata(player.uuid, buf.toString(), id, pw, parameter[0]));
                         break;
                     case "emailauth":
                         if (createNewDatabase(
@@ -579,7 +580,7 @@ public class PlayerDB {
         return false;
     }
     // 비 로그인 기능 사용시 계정등록
-    public boolean register(Player player) {
+    public boolean register(Playerc player) {
         if (!isduplicate(player)) { // 계정 중복 확인
             Locale locale = geolocation(player);
             return createNewDatabase(
@@ -604,7 +605,7 @@ public class PlayerDB {
             return false;
         }
     }
-    public static boolean login(Player player, String id, String pw) {
+    public static boolean login(Playerc player, String id, String pw) {
         boolean result = false;
         try {
             PreparedStatement pstm = conn.prepareStatement("SELECT * FROM players WHERE accountid = ?");
@@ -633,7 +634,7 @@ public class PlayerDB {
         }
         return result;
     }
-    public void load(Player player, String... parameter) {
+    public void load(Playerc player, String... parameter) {
         Thread thread = new Thread(() -> {
             PlayerData target;
             if(config.getPasswordmethod().equals("discord")){

@@ -42,8 +42,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 import static essentials.Global.*;
-import static essentials.Main.data;
-import static essentials.Main.*;
+import static essentials.Main.pluginData;
+import static essentials.Main.root;
 import static essentials.core.Log.writeLog;
 import static essentials.core.PlayerDB.PlayerData;
 import static essentials.special.PingServer.pingServer;
@@ -71,13 +71,13 @@ public class Threads extends TimerTask{
         // new changename().start();
 
         // 임시로 밴당한 유저 감시
-        for (int a = 0; a < data.banned.size(); a++) {
+        for (int a = 0; a < pluginData.banned.size(); a++) {
             LocalDateTime time = LocalDateTime.now();
-            if (time.isAfter(data.banned.get(a).getTime())) {
-                data.banned.remove(a);
+            if (time.isAfter(pluginData.banned.get(a).getTime())) {
+                pluginData.banned.remove(a);
                 config.PluginConfig.get("banned").asArray().remove(a);
-                netServer.admins.unbanPlayerID(data.banned.get(a).uuid);
-                nlog(LogType.log,"[" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) + data.banned.get(a).name + "/" + data.banned.get(a).uuid + " player unbanned!");
+                netServer.admins.unbanPlayerID(pluginData.banned.get(a).uuid);
+                nlog(LogType.log,"[" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) + pluginData.banned.get(a).name + "/" + pluginData.banned.get(a).uuid + " player unbanned!");
                 break;
             }
         }
@@ -105,7 +105,7 @@ public class Threads extends TimerTask{
 
             if(config.getDebugCode().contains("jumptotal_count")){
                 int result = 0;
-                for (jumpcount value : data.jumpcount) result = result + value.players;
+                for (jumpcount value : pluginData.jumpcount) result = result + value.players;
                 String name = "[#FFA]Lobby server [green]|[white] Anti griefing\n" +
                         "[#F32]Using Discord Authentication";
                 String desc = "[white]"+config.getDiscordLink()+"\n" +
@@ -118,17 +118,17 @@ public class Threads extends TimerTask{
             }
 
             // 모든 클라이언트 서버에 대한 인원 총합 카운트
-            for (int a = 0; a < data.jumptotal.size(); a++) {
+            for (int a = 0; a < pluginData.jumptotal.size(); a++) {
                 int result = 0;
-                for (jumpcount value : data.jumpcount) result = result + value.players;
+                for (jumpcount value : pluginData.jumpcount) result = result + value.players;
 
                 String str = String.valueOf(result);
                 int[] digits = new int[str.length()];
                 for (int b = 0; b < str.length(); b++) digits[b] = str.charAt(b) - '0';
 
-                Tile tile = data.jumptotal.get(a).getTile();
-                if (data.jumptotal.get(a).totalplayers != result) {
-                    if (data.jumptotal.get(a).numbersize != digits.length) {
+                Tile tile = pluginData.jumptotal.get(a).getTile();
+                if (pluginData.jumptotal.get(a).totalplayers != result) {
+                    if (pluginData.jumptotal.get(a).numbersize != digits.length) {
                         for (int px = 0; px < 3; px++) {
                             for (int py = 0; py < 5; py++) {
                                 Call.onDeconstructFinish(world.tile(tile.x + 4 + px, tile.y + py), Blocks.air, 0);
@@ -140,12 +140,12 @@ public class Threads extends TimerTask{
                         tile = world.tile(tile.x + 4, tile.y);
                     }
                 } else {
-                    for (int l = 0; l < data.jumptotal.get(a).numbersize; l++) {
+                    for (int l = 0; l < pluginData.jumptotal.get(a).numbersize; l++) {
                         setcount(tile, digits[l]);
                         tile = world.tile(tile.x + 4, tile.y);
                     }
                 }
-                data.jumptotal.set(a, new jumptotal(tile, result, digits.length));
+                pluginData.jumptotal.set(a, new jumptotal(tile, result, digits.length));
             }
 
             // 플레이어 플탐 카운트 및 잠수확인
@@ -181,14 +181,14 @@ public class Threads extends TimerTask{
             }
 
             // 메세지 블럭 감시
-            for(int a=0;a<data.messagemonitor.size();a++) {
+            for(int a = 0; a< pluginData.messagemonitor.size(); a++) {
                 String msg;
                 MessageBlock.MessageBlockEntity entity;
                 try {
-                    entity = (MessageBlock.MessageBlockEntity) data.messagemonitor.get(a).tile.entity;
+                    entity = (MessageBlock.MessageBlockEntity) pluginData.messagemonitor.get(a).tile.entity;
                     msg = entity.message;
                 }catch (NullPointerException e){
-                    data.messagemonitor.remove(a);
+                    pluginData.messagemonitor.remove(a);
                     return;
                 }
 
@@ -206,26 +206,26 @@ public class Threads extends TimerTask{
                     } else {
                         return;
                     }
-                    data.powerblock.add(new powerblock(entity.tile,target));
-                    data.messagemonitor.remove(a);
+                    pluginData.powerblock.add(new powerblock(entity.tile,target));
+                    pluginData.messagemonitor.remove(a);
                     break;
                 } else if (msg.contains("jump")) {
-                    data.messagejump.add(new messagejump(data.messagemonitor.get(a).tile,msg));
-                    data.messagemonitor.remove(a);
+                    pluginData.messagejump.add(new messagejump(pluginData.messagemonitor.get(a).tile,msg));
+                    pluginData.messagemonitor.remove(a);
                     break;
                 } else if (msg.equals("scancore")) {
-                    data.scancore.add(data.messagemonitor.get(a).tile);
-                    data.messagemonitor.remove(a);
+                    pluginData.scancore.add(pluginData.messagemonitor.get(a).tile);
+                    pluginData.messagemonitor.remove(a);
                     break;
                 }
             }
 
             // 서버 인원 확인
-            for (int i = 0; i < data.jumpcount.size(); i++) {
+            for (int i = 0; i < pluginData.jumpcount.size(); i++) {
                 int i2 = i;
-                jumpcount value = data.jumpcount.get(i);
+                jumpcount value = pluginData.jumpcount.get(i);
 
-                pingServer(data.jumpcount.get(i).serverip, result -> {
+                pingServer(pluginData.jumpcount.get(i).serverip, result -> {
                     if (result.name != null) {
                         String str = String.valueOf(result.players);
                         int[] digits = new int[str.length()];
@@ -251,7 +251,7 @@ public class Threads extends TimerTask{
                             }
                         }
                         // i 번째 server ip, 포트, x좌표, y좌표, 플레이어 인원, 플레이어 인원 길이
-                        data.jumpcount.set(i2,new jumpcount(value.getTile(),value.serverip,result.players,digits.length));
+                        pluginData.jumpcount.set(i2,new jumpcount(value.getTile(),value.serverip,result.players,digits.length));
                     } else {
                         setno(value.getTile(), true);
                     }
@@ -259,7 +259,7 @@ public class Threads extends TimerTask{
             }
 
             // 서버간 이동 영역에 플레이어가 있는지 확인
-            for (jumpzone value : data.jumpzone) {
+            for (jumpzone value : pluginData.jumpzone) {
                 if(!value.touch) {
                     for (int ix = 0; ix < playerGroup.size(); ix++) {
                         Player player = playerGroup.all().get(ix);
@@ -313,9 +313,9 @@ public class Threads extends TimerTask{
     static class changename extends Thread {
         @Override
         public void run(){
-            if(data.jumpcount.size() > 1){
+            if(pluginData.jumpcount.size() > 1){
                 int result = 0;
-                for (jumpcount value : data.jumpcount) result = result + value.players;
+                for (jumpcount value : pluginData.jumpcount) result = result + value.players;
                 Core.settings.put("servername", config.getServername()+", "+result+" players");
             }
         }
@@ -413,7 +413,7 @@ public class Threads extends TimerTask{
                     pb.directory(new File(Paths.get("").toAbsolutePath().toString() + "/config/mods/Essentials/temp/" + roomname));
                     pb.inheritIO().redirectOutput(Core.settings.getDataDirectory().child("test.txt").file());
                     p = pb.start();
-                    data.process.add(p);
+                    pluginData.process.add(p);
                     if(p.isAlive()) nlog(LogType.log,"online");
                     Process finalP = p;
                     TimerTask t = new TimerTask() {
@@ -432,7 +432,7 @@ public class Threads extends TimerTask{
                                         }
 
                                         finalP.destroy();
-                                        data.process.remove(finalP);
+                                        pluginData.process.remove(finalP);
                                         this.cancel();
                                     } catch (IOException e) {
                                         printError(e);
@@ -766,23 +766,23 @@ public class Threads extends TimerTask{
         @Override
         public void run() {
             while(true) {
-                for (int a = 0; a < data.messagejump.size(); a++) {
+                for (int a = 0; a < pluginData.messagejump.size(); a++) {
                     if (state.is(GameState.State.playing)) {
-                        if (data.messagejump.get(a).tile.entity.block != Blocks.message) {
-                            data.messagejump.remove(a);
+                        if (pluginData.messagejump.get(a).tile.entity.block != Blocks.message) {
+                            pluginData.messagejump.remove(a);
                             break;
                         }
-                        Call.setMessageBlockText(null, data.messagejump.get(a).tile, "[green]Working...");
+                        Call.setMessageBlockText(null, pluginData.messagejump.get(a).tile, "[green]Working...");
 
-                        String[] arr = data.messagejump.get(a).message.split(" ");
+                        String[] arr = pluginData.messagejump.get(a).message.split(" ");
                         String ip = arr[1];
 
                         int fa = a;
                         pingServer(ip, result -> {
                             if (result.name != null) {
-                                Call.setMessageBlockText(null, data.messagejump.get(fa).tile, "[green]" + result.players + " Players in this server.");
+                                Call.setMessageBlockText(null, pluginData.messagejump.get(fa).tile, "[green]" + result.players + " Players in this server.");
                             } else {
-                                Call.setMessageBlockText(null, data.messagejump.get(fa).tile, "[scarlet]Server offline");
+                                Call.setMessageBlockText(null, pluginData.messagejump.get(fa).tile, "[scarlet]Server offline");
                             }
                         });
                     }
@@ -805,9 +805,9 @@ public class Threads extends TimerTask{
         }
 
         public static void main(){
-            length = data.jumpzone.size();
+            length = pluginData.jumpzone.size();
 
-            for (jumpzone data : data.jumpzone) {
+            for (jumpzone data : pluginData.jumpzone) {
                 Thread t = new Thread(() -> {
                     while (true) {
                         String ip = data.ip;

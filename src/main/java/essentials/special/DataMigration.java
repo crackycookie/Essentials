@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 import static essentials.Global.locale;
 import static essentials.Global.nbundle;
 import static essentials.Main.config;
-import static essentials.Main.data;
+import static essentials.Main.pluginData;
 import static essentials.core.PlayerDB.conn;
 
 public class DataMigration {
@@ -40,13 +40,13 @@ public class DataMigration {
                 JsonObject value = JsonValue.readJSON(json).asObject();
                 if(value.get("banned") != null) {
                     JsonObject arrays = value.get("banned").asObject();
-                    data.saveall();
+                    pluginData.saveall();
                     for (int a = 0; a < arrays.size(); a++) {
                         LocalDateTime date = LocalDateTime.parse(arrays.get("date").asString());
                         String name = arrays.get("name").asString();
                         String uuid = arrays.get("uuid").asString();
                         String reason = arrays.get("reason").asString();
-                        data.banned.add(new PluginData.banned(date, name, uuid, reason));
+                        pluginData.banned.add(new PluginData.banned(date, name, uuid, reason));
                     }
                     // 서버간 이동 데이터들은 변환하지 않음
                     root.child("data/data.json").delete();

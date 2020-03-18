@@ -106,14 +106,16 @@ public class PluginData {
         public final int finishx;
         public final int finishy;
         public final String ip;
+        public final int port;
         public final boolean touch;
 
-        public jumpzone(Tile start, Tile finish, boolean touch, String ip){
+        public jumpzone(Tile start, Tile finish, boolean touch, String ip, int port){
             this.startx = start.x;
             this.starty = start.y;
             this.finishx = finish.x;
             this.finishy = finish.y;
             this.ip = ip;
+            this.port = port;
             this.touch = touch;
         }
 

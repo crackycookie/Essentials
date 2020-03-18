@@ -21,7 +21,7 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
 import static essentials.Global.*;
-import static essentials.Main.data;
+import static essentials.Main.pluginData;
 import static essentials.Main.root;
 import static mindustry.Vars.net;
 
@@ -54,7 +54,7 @@ public class Config {
             if(root.child("config.hjson").exists()) obj = JsonValue.readHjson(root.child("config.hjson").readString()).asObject();
             update();
 
-            data.loadall();
+            pluginData.loadall();
 
             try{
                 ResourceBundle.getBundle("bundle.bundle", locale, new UTF8Control()).getString("config-language");
