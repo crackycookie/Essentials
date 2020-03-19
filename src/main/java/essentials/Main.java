@@ -425,26 +425,6 @@ public class Main extends Plugin {
                     onSetRules(state.rules);
                     threads.PvPPeace = true;
                 }
-
-                // 플레이어 인원별 난이도 설정
-                if (config.isAutodifficulty()) {
-                    int total = Groups.player.size();
-                    if (config.getEasy() >= total) {
-                        // TODO Next work
-                        state.rules.waveSpacing = diff.valueOf("easy").waveTime * 60 * 60 * 2;
-                        allsendMessage("difficulty-easy");
-                    } else if (config.getNormal() == total) {
-                        state.rules.waveSpacing = Difficulty.valueOf("normal").waveTime * 60 * 60 * 2;
-                        allsendMessage("difficulty-normal");
-                    } else if (config.getHard() == total) {
-                        state.rules.waveSpacing = Difficulty.valueOf("hard").waveTime * 60 * 60 * 2;
-                        allsendMessage("difficulty-hard");
-                    } else if (config.getInsane() <= total) {
-                        state.rules.waveSpacing = Difficulty.valueOf("insane").waveTime * 60 * 60 * 2;
-                        allsendMessage("difficulty-insane");
-                    }
-                    onSetRules(state.rules);
-                }
             });
             config.executorService.submit(t);
         });

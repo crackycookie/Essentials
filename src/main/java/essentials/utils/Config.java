@@ -219,13 +219,6 @@ public class Config {
                 "  enable-rollback: " + isEnableRollback() + "\n" +
                 "  slotnumber: " + getSlotnumber() + "\n" +
                 "\n" +
-                "  # "+nbundle("config-auto-difficulty-description")+"\n" +
-                "  auto-difficulty: "+isAutodifficulty()+"\n" +
-                "  easy: "+getEasy()+"\n" +
-                "  normal: "+getNormal()+"\n" +
-                "  hard: "+getHard()+"\n" +
-                "  insane: "+getInsane()+"\n" +
-                "\n" +
                 "  # "+nbundle("config-border-description")+"\n" +
                 "  border: "+isBorder()+"\n" +
                 "\n" +
@@ -512,10 +505,6 @@ public class Config {
 
     public int getSlotnumber(){
         return obj.getInt("slotnumber",1000);
-    }
-
-    public boolean isAutodifficulty(){
-        return obj.getBoolean("auto-difficulty",false);
     }
 
     public int getEasy(){
