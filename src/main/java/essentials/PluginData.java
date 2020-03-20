@@ -1,5 +1,6 @@
 package essentials;
 
+import mindustry.gen.Tilec;
 import mindustry.world.Tile;
 
 import java.io.*;
@@ -37,10 +38,10 @@ public class PluginData {
     public ArrayList<Integer> average = new ArrayList<>();
 
     public static class nukeblock{
-        public final Tile tile;
+        public final Tilec tile;
         public final String name;
 
-        nukeblock(Tile tile, String name){
+        nukeblock(Tilec tile, String name){
             this.tile = tile;
             this.name = name;
         }
@@ -57,28 +58,28 @@ public class PluginData {
     }
 
     public static class powerblock{
-        public final Tile messageblock;
-        public final Tile tile;
+        public final Tilec messageblock;
+        public final Tilec tile;
 
-        powerblock(Tile messageblock, Tile tile){
+        powerblock(Tilec messageblock, Tilec tile){
             this.messageblock = messageblock;
             this.tile = tile;
         }
     }
 
     public static class messagemonitor{
-        public final Tile tile;
+        public final Tilec tile;
 
-        messagemonitor(Tile tile){
+        messagemonitor(Tilec tile){
             this.tile = tile;
         }
     }
 
     public static class messagejump{
-        public final Tile tile;
+        public final Tilec tile;
         public final String message;
 
-        messagejump(Tile tile, String message){
+        messagejump(Tilec tile, String message){
             this.tile = tile;
             this.message = message;
         }
@@ -109,22 +110,22 @@ public class PluginData {
         public final int port;
         public final boolean touch;
 
-        public jumpzone(Tile start, Tile finish, boolean touch, String ip, int port){
-            this.startx = start.x;
-            this.starty = start.y;
-            this.finishx = finish.x;
-            this.finishy = finish.y;
+        public jumpzone(Tilec start, Tilec finish, boolean touch, String ip, int port){
+            this.startx = start.tileX();
+            this.starty = start.tileY();
+            this.finishx = finish.tileX();
+            this.finishy = finish.tileY();
             this.ip = ip;
             this.port = port;
             this.touch = touch;
         }
 
-        public Tile getStartTile(){
-            return world.tile(startx,starty);
+        public Tilec getStartTile(){
+            return world.ent(startx,starty);
         }
 
-        public Tile getFinishTile(){
-            return world.tile(finishx,finishy);
+        public Tilec getFinishTile(){
+            return world.ent(finishx,finishy);
         }
     }
 
@@ -135,16 +136,16 @@ public class PluginData {
         public int players;
         public int numbersize;
 
-        public jumpcount(Tile tile, String serverip, int players, int numbersize){
-            this.x = tile.x;
-            this.y = tile.y;
+        public jumpcount(Tilec tile, String serverip, int players, int numbersize){
+            this.x = tile.tileX();
+            this.y = tile.tileY();
             this.serverip = serverip;
             this.players = players;
             this.numbersize = numbersize;
         }
 
-        public Tile getTile(){
-            return world.tile(x,y);
+        public Tilec getTile(){
+            return world.ent(x,y);
         }
     }
 
@@ -154,15 +155,15 @@ public class PluginData {
         public int totalplayers;
         public int numbersize;
 
-        public jumptotal(Tile tile, int totalplayers, int numbersize){
-            this.x = tile.x;
-            this.y = tile.y;
+        public jumptotal(Tilec tile, int totalplayers, int numbersize){
+            this.x = tile.tileX();
+            this.y = tile.tileY();
             this.totalplayers = totalplayers;
             this.numbersize = numbersize;
         }
 
-        public Tile getTile(){
-            return world.tile(x,y);
+        public Tilec getTile(){
+            return world.ent(x,y);
         }
     }
 
