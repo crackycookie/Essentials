@@ -41,9 +41,9 @@ public class PluginData {
         public final Tilec tile;
         public final String name;
 
-        nukeblock(Tilec tile, String name){
+        nukeblock(Tilec tile, String player_name){
             this.tile = tile;
-            this.name = name;
+            this.name = player_name;
         }
     }
 
@@ -120,11 +120,11 @@ public class PluginData {
             this.touch = touch;
         }
 
-        public Tilec getStartTile(){
+        public Tilec start(){
             return world.ent(startx,starty);
         }
 
-        public Tilec getFinishTile(){
+        public Tilec finish(){
             return world.ent(finishx,finishy);
         }
     }

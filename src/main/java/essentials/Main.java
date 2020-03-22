@@ -187,8 +187,8 @@ public class Main extends Plugin {
                     String ip = data.ip;
                     int port = data.port;
 
-                    if (e.tile.x() > data.getStartTile().x && e.tile.x() < data.getFinishTile().x) {
-                        if (e.tile.y() > data.getStartTile().y && e.tile.y() < data.getFinishTile().y) {
+                    if (e.tile.x() > data.start().x && e.tile.x() < data.finish().x) {
+                        if (e.tile.y() > data.start().y && e.tile.y() < data.finish().y) {
                             log(LogType.log, "player-jumped", e.player.name(), data.ip);
                             PlayerData player = PlayerData(e.player.uuid()); //todo PlayerDB rework
                             player.connected = false;

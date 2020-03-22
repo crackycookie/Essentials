@@ -815,25 +815,25 @@ public class Threads extends TimerTask{
                             pingServer(ip, result -> {
                                 try {
                                     if (result.name != null) {
-                                        int size = data.getFinishTile().x - data.getStartTile().x;
+                                        int size = data.finish().x - data.start().x;
 
                                         for (int x = 0; x < size; x++) {
-                                            Tile tile = world.tile(data.getStartTile().x + x, data.getStartTile().y);
+                                            Tile tile = world.tile(data.start().x + x, data.start().y);
                                             Call.onConstructFinish(tile, Blocks.air, 0, (byte) 0, Team.sharded, true);
                                             sleep(96);
                                         }
                                         for (int y = 0; y < size; y++) {
-                                            Tile tile = world.tile(data.getFinishTile().x, data.getStartTile().y + y);
+                                            Tile tile = world.tile(data.finish().x, data.start().y + y);
                                             Call.onConstructFinish(tile, Blocks.air, 0, (byte) 0, Team.sharded, true);
                                             sleep(96);
                                         }
                                         for (int x = 0; x < size; x++) {
-                                            Tile tile = world.tile(data.getFinishTile().x - x, data.getFinishTile().y);
+                                            Tile tile = world.tile(data.finish().x - x, data.finish().y);
                                             Call.onConstructFinish(tile, Blocks.air, 0, (byte) 0, Team.sharded, true);
                                             sleep(96);
                                         }
                                         for (int y = 0; y < size; y++) {
-                                            Tile tile = world.tile(data.getStartTile().x, data.getFinishTile().y - y);
+                                            Tile tile = world.tile(data.start().x, data.finish().y - y);
                                             Call.onConstructFinish(tile, Blocks.air, 0, (byte) 0, Team.sharded, true);
                                             sleep(96);
                                         }

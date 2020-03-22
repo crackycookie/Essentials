@@ -30,7 +30,7 @@ import static mindustry.Vars.playerGroup;
 
 public class PlayerDB {
     public static Connection conn;
-    public static ArrayList<Player> pvpteam = new ArrayList<>();
+    public static ArrayList<Playerc> pvpteam = new ArrayList<>();
     public static ArrayList<PlayerData> Players = new ArrayList<>(); // Players data
     int DBVersion = 4;
 
