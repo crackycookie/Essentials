@@ -3,7 +3,7 @@ package essentials.feature;
 import essentials.core.player.PlayerData;
 import essentials.internal.CrashReport;
 import essentials.internal.Log;
-import mindustry.entities.type.Player;
+import mindustry.gen.Playerc;
 import org.hjson.JsonObject;
 import org.hjson.JsonValue;
 
@@ -42,8 +42,8 @@ public class Permission {
         }
     }
 
-    public boolean check(Player player, String command) {
-        PlayerData p = playerDB.get(player.uuid);
+    public boolean check(Playerc player, String command) {
+        PlayerData p = playerDB.get(player.uuid());
 
         if (!p.error) {
             int size = permission.get(p.permission).asObject().get("permission").asArray().size();
@@ -57,8 +57,8 @@ public class Permission {
         return false;
     }
 
-    public boolean isAdmin(Player player) {
-        PlayerData p = playerDB.get(player.uuid);
+    public boolean isAdmin(Playerc player) {
+        PlayerData p = playerDB.get(player.uuid());
         return permission.get(p.permission).asObject().getBoolean("admin", false);
     }
 }

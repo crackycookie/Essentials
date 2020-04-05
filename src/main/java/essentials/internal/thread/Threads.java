@@ -7,8 +7,9 @@ import essentials.internal.CrashReport;
 import mindustry.Vars;
 import mindustry.content.Blocks;
 import mindustry.core.GameState;
-import mindustry.entities.type.Player;
 import mindustry.gen.Call;
+import mindustry.gen.Groups;
+import mindustry.gen.Playerc;
 import org.hjson.JsonObject;
 import org.hjson.JsonValue;
 import org.jsoup.Jsoup;
@@ -19,7 +20,6 @@ import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
 import static essentials.Main.*;
-import static mindustry.Vars.playerGroup;
 import static mindustry.Vars.state;
 
 public class Threads implements Runnable {
@@ -30,12 +30,12 @@ public class Threads implements Runnable {
         while (!Thread.currentThread().isInterrupted()) {
             try {
                 // 로그인 요청 알림
-                for (int a = 0; a < playerGroup.size(); a++) {
-                    Player p = playerGroup.all().get(a);
-                    PlayerData playerData = playerDB.get(p.uuid);
+                for (int a = 0; a < Groups.player.size(); a++) {
+                    Playerc p = Groups.player.index(a);
+                    PlayerData playerData = playerDB.get(p.uuid());
                     if (playerData.error) {
                         String message;
-                        String json = Jsoup.connect("http://ipapi.co/" + Vars.netServer.admins.getInfo(p.uuid).lastIP + "/json").ignoreContentType(true).execute().body();
+                        String json = Jsoup.connect("http://ipapi.co/" + Vars.netServer.admins.getInfo(p.uuid()).lastIP + "/json").ignoreContentType(true).execute().body();
                         JsonObject result = JsonValue.readJSON(json).asObject();
                         Locale language = tool.TextToLocale(result.getString("languages", locale.toString()));
                         if (config.passwordmethod.equals("discord")) {
@@ -50,7 +50,7 @@ public class Threads implements Runnable {
                 // 외부 서버 플레이어 인원 - 메세지 블럭
                 for (int a = 0; a < pluginData.messagejump.size(); a++) {
                     if (state.is(GameState.State.playing)) {
-                        if (pluginData.messagejump.get(a).tile.entity.block != Blocks.message) {
+                        if (pluginData.messagejump.get(a).tile.entity.block() != Blocks.message) {
                             pluginData.messagejump.remove(a);
                             break;
                         }
@@ -66,8 +66,8 @@ public class Threads implements Runnable {
                 }
                 TimeUnit.SECONDS.sleep(1);
             } catch (Exception e) {
-                for (Player p : playerGroup.all())
-                    Call.onKick(p.con, new Bundle(Locale.ENGLISH).get("plugin-error-kick"));
+                for (Playerc p : Groups.player)
+                    Call.onKick(p.con(), new Bundle(Locale.ENGLISH).get("plugin-error-kick"));
                 new CrashReport(e);
             }
         }

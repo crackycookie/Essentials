@@ -7,7 +7,6 @@ import essentials.internal.CrashReport;
 import essentials.internal.Log;
 import mindustry.core.GameState;
 import mindustry.core.Version;
-import mindustry.entities.type.Player;
 import mindustry.game.Team;
 import mindustry.net.Administration;
 import mindustry.type.Item;
@@ -204,7 +203,7 @@ public class Server implements Runnable {
                             break;
                         case chat:
                             String message = data.get("message").asString();
-                            for (Player p : playerGroup) {
+                            for (Playerc p : playerGroup) {
                                 p.sendMessage(p.isAdmin ? "[#C77E36][" + ip + "][RC] " + message : "[#C77E36][RC] " + message);
                             }
 
@@ -271,7 +270,7 @@ public class Server implements Runnable {
 
         private String query() throws SQLException {
             JsonObject result = new JsonObject();
-            result.add("players", playerGroup.size()); // 플레이어 인원
+            result.add("players", Groups.player.size()); // 플레이어 인원
             result.add("version", Version.build); // 버전
             result.add("plugin-version", plugin_version);
             result.add("playtime", playtime.format(DateTimeFormatter.ofPattern("HH:mm:ss")));
@@ -281,7 +280,7 @@ public class Server implements Runnable {
             result.add("enemy-count", state.enemies);
 
             boolean online = false;
-            for (Player p : playerGroup.all()) {
+            for (Playerc p : Groups.player) {
                 if (p.isAdmin) {
                     online = true;
                     break;
@@ -290,7 +289,7 @@ public class Server implements Runnable {
             result.add("admin_online", online);
 
             JsonArray array = new JsonArray();
-            for (Player p : playerGroup.all()) {
+            for (Playerc p : Groups.player) {
                 array.add(p.name); // player list
             }
             result.add("playerlist", array);
@@ -318,9 +317,9 @@ public class Server implements Runnable {
 
         private String serverinfo() {
             if (state.is(GameState.State.playing)) {
-                int playercount = playerGroup.size();
+                int playercount = Groups.player.size();
                 StringBuilder playerdata = new StringBuilder();
-                for (Player p : playerGroup.all()) {
+                for (Playerc p : Groups.player) {
                     playerdata.append(p.name).append(",");
                 }
                 if (playerdata.length() != 0) {

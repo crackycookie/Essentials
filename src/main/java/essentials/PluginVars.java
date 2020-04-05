@@ -1,7 +1,7 @@
 package essentials;
 
 import essentials.core.player.PlayerData;
-import mindustry.entities.type.Player;
+import mindustry.gen.Playerc;
 
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -20,7 +20,7 @@ public class PluginVars {
     public static LocalTime playtime = LocalTime.of(0, 0, 0);
 
     public static List<PlayerData> playerData = new ArrayList<>();
-    public static List<Player> players = new ArrayList<>();
+    public static List<Playerc> players = new ArrayList<>();
     public static List<String> DBURL = Arrays.asList(
             "https://repo1.maven.org/maven2/org/xerial/sqlite-jdbc/3.30.1/sqlite-jdbc-3.30.1.jar",
             "https://repo1.maven.org/maven2/org/mariadb/jdbc/mariadb-java-client/2.6.0/mariadb-java-client-2.6.0.jar",

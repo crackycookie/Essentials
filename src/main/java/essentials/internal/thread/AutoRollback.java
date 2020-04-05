@@ -6,8 +6,10 @@ import essentials.internal.CrashReport;
 import essentials.internal.Log;
 import mindustry.Vars;
 import mindustry.core.GameState;
-import mindustry.entities.type.Player;
+import mindustry.entities.EntityGroup;
 import mindustry.gen.Call;
+import mindustry.gen.Groups;
+import mindustry.gen.Playerc;
 import mindustry.io.SaveIO;
 
 import java.util.TimerTask;
@@ -26,8 +28,8 @@ public class AutoRollback extends TimerTask {
     }
 
     public void load() {
-        Array<Player> all = Vars.playerGroup.all();
-        Array<Player> players = new Array<>();
+        EntityGroup<Playerc> all = Groups.player;
+        Array<Playerc> players = new Array<>();
         players.addAll(all);
 
         try {
@@ -39,12 +41,12 @@ public class AutoRollback extends TimerTask {
 
         Call.onWorldDataBegin();
 
-        for (Player p : players) {
+        for (Playerc p : players) {
             Vars.netServer.sendWorldData(p);
             p.reset();
 
             if (Vars.state.rules.pvp) {
-                p.setTeam(Vars.netServer.assignTeam(p, new Array.ArrayIterable<>(players)));
+                p.team(Vars.netServer.assignTeam(p, new Array.ArrayIterable<>(players)));
             }
         }
         Log.info("Map rollbacked.");

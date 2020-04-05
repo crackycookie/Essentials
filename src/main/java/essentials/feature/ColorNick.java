@@ -1,7 +1,7 @@
 package essentials.feature;
 
 import essentials.core.player.PlayerData;
-import mindustry.entities.type.Player;
+import mindustry.gen.Playerc;
 
 import java.util.ArrayList;
 
@@ -10,13 +10,13 @@ import static essentials.Main.playerDB;
 
 public class ColorNick implements Runnable {
     private static int colorOffset = 0;
-    public ArrayList<Player> targets = new ArrayList<>();
+    public ArrayList<Playerc> targets = new ArrayList<>();
 
     @Override
     public void run() {
         while (!Thread.currentThread().isInterrupted()) {
-            for (Player player : targets) {
-                PlayerData p = playerDB.get(player.uuid);
+            for (Playerc player : targets) {
+                PlayerData p = playerDB.get(player.uuid());
                 if (p.connected) {
                     String name = p.name.replaceAll("\\[(.*?)]", "");
                     nickcolor(name, player);
@@ -30,7 +30,7 @@ public class ColorNick implements Runnable {
         }
     }
 
-    private void nickcolor(String name, Player player) {
+    private void nickcolor(String name, Playerc player) {
         StringBuilder stringBuilder = new StringBuilder();
 
         String[] colors = new String[11];
@@ -60,6 +60,6 @@ public class ColorNick implements Runnable {
         for (String s : newnick) {
             stringBuilder.append(s);
         }
-        player.name = stringBuilder.toString();
+        player.name(stringBuilder.toString());
     }
 }

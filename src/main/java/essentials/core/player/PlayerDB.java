@@ -3,7 +3,7 @@ package essentials.core.player;
 import essentials.external.Mail;
 import essentials.internal.CrashReport;
 import essentials.internal.Log;
-import mindustry.entities.type.Player;
+import mindustry.gen.Playerc;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -143,11 +143,11 @@ public class PlayerDB {
         }
     }
 
-    public boolean register(Player player, String country, String country_code, String language, boolean connected, String connserver, String permission, Long udid, String email, String accountid, String accountpw) {
+    public boolean register(Playerc player, String country, String country_code, String language, boolean connected, String connserver, String permission, Long udid, String email, String accountid, String accountpw) {
         StringBuilder sql = new StringBuilder();
         sql.append("INSERT INTO players VALUES(");
 
-        PlayerData newdata = playerCore.NewData(player.name, player.uuid, country, country_code, language, connected, connserver, permission, udid, email, accountid, accountpw);
+        PlayerData newdata = playerCore.NewData(player.name(), player.uuid(), country, country_code, language, connected, connserver, permission, udid, email, accountid, accountpw);
         Map<String, Object> js = newdata.toMap();
 
         js.forEach((name, value) -> {
@@ -192,7 +192,7 @@ public class PlayerDB {
         }
     }
 
-    public boolean email(Player player, String id, String pw, String email) {
+    public boolean email(Playerc player, String id, String pw, String email) {
         StringBuilder key = new StringBuilder();
         for (int a = 0; a <= 6; a++) {
             int n = (int) (Math.random() * 10);
@@ -203,7 +203,7 @@ public class PlayerDB {
         return mail.send();
     }
 
-    public boolean verify_mail(Player player, String id, String authkey) {
+    public boolean verify_mail(Playerc player, String id, String authkey) {
         // TODO email 인증키 확인
         String key = email.get(id);
         return key.equals(authkey);

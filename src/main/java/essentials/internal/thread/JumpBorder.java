@@ -1,11 +1,11 @@
 package essentials.internal.thread;
 
-import arc.graphics.Color;
 import essentials.core.plugin.PluginData;
 import essentials.external.PingHost;
 import essentials.internal.Log;
-import mindustry.content.Fx;
+import mindustry.content.Blocks;
 import mindustry.core.GameState;
+import mindustry.game.Team;
 import mindustry.gen.Call;
 import mindustry.world.Tile;
 
@@ -42,22 +42,22 @@ public class JumpBorder implements Runnable {
 
                                     for (int x = 0; x < size; x++) {
                                         Tile tile = world.tile(data.getStartTile().x + x, data.getStartTile().y);
-                                        Call.onEffect(Fx.placeBlock, tile.getX(), tile.getY(), 0, Color.orange);
+                                        Call.onConstructFinish(tile, Blocks.air, 0, (byte) 0, Team.sharded, true);
                                         sleep(96);
                                     }
                                     for (int y = 0; y < size; y++) {
                                         Tile tile = world.tile(data.getFinishTile().x, data.getStartTile().y + y);
-                                        Call.onEffect(Fx.placeBlock, tile.getX(), tile.getY(), 0, Color.orange);
+                                        Call.onConstructFinish(tile, Blocks.air, 0, (byte) 0, Team.sharded, true);
                                         sleep(96);
                                     }
                                     for (int x = 0; x < size; x++) {
                                         Tile tile = world.tile(data.getFinishTile().x - x, data.getFinishTile().y);
-                                        Call.onEffect(Fx.placeBlock, tile.getX(), tile.getY(), 0, Color.orange);
+                                        Call.onConstructFinish(tile, Blocks.air, 0, (byte) 0, Team.sharded, true);
                                         sleep(96);
                                     }
                                     for (int y = 0; y < size; y++) {
                                         Tile tile = world.tile(data.getStartTile().x, data.getFinishTile().y - y);
-                                        Call.onEffect(Fx.placeBlock, tile.getX(), tile.getY(), 0, Color.orange);
+                                        Call.onConstructFinish(tile, Blocks.air, 0, (byte) 0, Team.sharded, true);
                                         sleep(96);
                                     }
                                     if (size < 5) sleep(2000);

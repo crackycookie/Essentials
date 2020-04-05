@@ -5,11 +5,12 @@ import arc.util.Time;
 import essentials.internal.Bundle;
 import essentials.internal.Log;
 import mindustry.Vars;
-import mindustry.entities.type.Player;
 import mindustry.game.EventType;
 import mindustry.game.Gamemode;
 import mindustry.game.Team;
 import mindustry.gen.Call;
+import mindustry.gen.Groups;
+import mindustry.gen.Playerc;
 import mindustry.maps.Map;
 import mindustry.net.Packets;
 
@@ -24,8 +25,8 @@ import static mindustry.Vars.*;
 public class Vote {
     Timer timer = new Timer(true);
 
-    Player player;
-    Player target;
+    Playerc player;
+    Playerc target;
     String reason;
     Object parameters;
     VoteType type;
@@ -59,7 +60,7 @@ public class Vote {
             String[] bundlename = {"vote-50sec", "vote-40sec", "vote-30sec", "vote-20sec", "vote-10sec"};
 
             if (message_time <= 4) {
-                if (playerGroup.size() > 0) {
+                if (Groups.player.size() > 0) {
                     tool.sendMessageAll(bundlename[message_time]);
                 }
                 message_time++;
@@ -67,27 +68,27 @@ public class Vote {
         }
     };
 
-    public void start(Player player, Player target, String reason) {
+    public void start(Playerc player, Playerc target, String reason) {
         this.player = player;
         this.target = target;
         this.reason = reason;
         this.type = VoteType.kick;
 
-        Bundle bundle = new Bundle(playerDB.get(player.uuid).locale);
+        Bundle bundle = new Bundle(playerDB.get(player.uuid()).locale);
 
-        if (playerGroup.size() == 1) {
+        if (Groups.player.size() == 1) {
             player.sendMessage(bundle.get("vote-min"));
             return;
-        } else if (playerGroup.size() <= 3) {
+        } else if (Groups.player.size() <= 3) {
             require = 2;
         } else {
-            require = (int) Math.ceil((double) playerGroup.size() / 2);
+            require = (int) Math.ceil((double) Groups.player.size() / 2);
         }
 
         if (!status) {
-            tool.sendMessageAll("vote-suggest-name", player.name);
+            tool.sendMessageAll("vote-suggest-name", player.name());
             tool.sendMessageAll("vote-reason", reason);
-            tool.sendMessageAll("vote-kick", player.name, target.name);
+            tool.sendMessageAll("vote-kick", player.name(), target.name());
             timer.scheduleAtFixedRate(counting, 0, 1000);
             timer.scheduleAtFixedRate(alert, 10000, 10000);
             status = true;
@@ -96,12 +97,12 @@ public class Vote {
         }
     }
 
-    public void start(VoteType type, Player player, Object... parameters) {
+    public void start(VoteType type, Playerc player, Object... parameters) {
         this.player = player;
         this.type = type;
         this.parameters = parameters;
 
-        Bundle bundle = new Bundle(playerDB.get(player.uuid).locale);
+        Bundle bundle = new Bundle(playerDB.get(player.uuid()).locale);
 
         if (!status) {
             switch (type) {
@@ -149,7 +150,7 @@ public class Vote {
                 case kick:
                     tool.sendMessageAll("vote-kick-done");
                     target.getInfo().lastKicked = Time.millis() + (30 * 60) * 1000;
-                    Call.onKick(target.con, Packets.KickReason.vote);
+                    Call.onKick(target.con(), Packets.KickReason.vote);
                     Log.write(Log.LogType.player, "log-player-kick");
                     break;
                 case rollback:
@@ -170,11 +171,11 @@ public class Vote {
                     world.loadMap((Map) parameters, ((Map) parameters).applyRules(current));
                     Call.onWorldDataBegin();
 
-                    for (Player p : playerGroup.all()) {
+                    for (Playerc p : Groups.player) {
                         Vars.netServer.sendWorldData(p);
                         p.reset();
 
-                        if (Vars.state.rules.pvp) p.setTeam(Vars.netServer.assignTeam(p, playerGroup.all()));
+                        if (Vars.state.rules.pvp) p.team(Vars.netServer.assignTeam(p, Groups.player));
                     }
                     Log.info("Map rollbacked.");
                     tool.sendMessageAll("vote-map-done");
