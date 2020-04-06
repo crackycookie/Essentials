@@ -8,6 +8,8 @@ import essentials.internal.Log;
 import mindustry.core.GameState;
 import mindustry.core.Version;
 import mindustry.game.Team;
+import mindustry.gen.Groups;
+import mindustry.gen.Playerc;
 import mindustry.net.Administration;
 import mindustry.type.Item;
 import mindustry.type.ItemType;
@@ -203,8 +205,8 @@ public class Server implements Runnable {
                             break;
                         case chat:
                             String message = data.get("message").asString();
-                            for (Playerc p : playerGroup) {
-                                p.sendMessage(p.isAdmin ? "[#C77E36][" + ip + "][RC] " + message : "[#C77E36][RC] " + message);
+                            for (Playerc p : Groups.player) {
+                                p.sendMessage(p.admin() ? "[#C77E36][" + ip + "][RC] " + message : "[#C77E36][RC] " + message);
                             }
 
                             for (service ser : list) {
@@ -281,7 +283,7 @@ public class Server implements Runnable {
 
             boolean online = false;
             for (Playerc p : Groups.player) {
-                if (p.isAdmin) {
+                if (p.admin()) {
                     online = true;
                     break;
                 }
@@ -290,14 +292,14 @@ public class Server implements Runnable {
 
             JsonArray array = new JsonArray();
             for (Playerc p : Groups.player) {
-                array.add(p.name); // player list
+                array.add(p.name()); // player list
             }
             result.add("playerlist", array);
 
             JsonObject items = new JsonObject();
             for (Item item : content.items()) {
                 if (item.type == ItemType.material) {
-                    items.add(item.name, state.teams.get(Team.sharded).cores.first().items.get(item)); // resources
+                    items.add(item.name, state.teams.get(Team.sharded).cores.first().items().get(item)); // resources
                 }
             }
             result.add("resource", items);
@@ -320,7 +322,7 @@ public class Server implements Runnable {
                 int playercount = Groups.player.size();
                 StringBuilder playerdata = new StringBuilder();
                 for (Playerc p : Groups.player) {
-                    playerdata.append(p.name).append(",");
+                    playerdata.append(p.name()).append(",");
                 }
                 if (playerdata.length() != 0) {
                     playerdata.substring(playerdata.length() - 1, playerdata.length());
@@ -332,7 +334,7 @@ public class Server implements Runnable {
                 StringBuilder items = new StringBuilder();
                 for (Item item : content.items()) {
                     if (item.type == ItemType.material) {
-                        items.append(item.name).append(": ").append(state.teams.get(Team.sharded).cores.first().items.get(item)).append("<br>");
+                        items.append(item.name).append(": ").append(state.teams.get(Team.sharded).cores.first().items().get(item)).append("<br>");
                     }
                 }
                 String coreitem = items.toString();

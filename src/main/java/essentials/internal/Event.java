@@ -11,7 +11,6 @@ import essentials.external.IpAddressMatcher;
 import essentials.network.Client;
 import essentials.network.Server;
 import mindustry.content.Blocks;
-import mindustry.entities.type.Player;
 import mindustry.game.EventType;
 import mindustry.game.Team;
 import mindustry.gen.Call;
@@ -353,7 +352,7 @@ public class Event {
                         if (!playerData.mute) {
                             if (perm.permission.get(playerData.permission).asObject().get("prefix") != null) {
                                 if (!playerData.crosschat)
-                                    Call.sendMessage(perm.permission.get(playerData.permission).asObject().get("prefix").asString().replace("%1", colorizeName(e.player.id, e.player.name)).replaceAll("%2", e.message));
+                                    Call.sendMessage(perm.permission.get(playerData.permission).asObject().get("prefix").asString().replace("%1", colorizeName(e.player.id(), e.player.name())).replaceAll("%2", e.message));
                             } else {
                                 if (!playerData.crosschat)
                                     Call.sendMessage("[orange]" + colorizeName(e.player.id(), e.player.name()) + "[orange] :[white] " + e.message);
@@ -437,59 +436,62 @@ public class Event {
 
         // 플레이어가 블럭을 건설했을 때
         Events.on(EventType.BlockBuildEndEvent.class, e -> {
-            PlayerData target = playerDB.get(e.player.uuid());
-            if (!e.breaking && e.player.buildRequest() != null && !target.error && e.tile != null && e.player.buildRequest() != null) {
-                String name = e.tile.block().name;
-                try {
-                    JsonObject obj = JsonValue.readHjson(root.child("Exp.hjson").reader()).asObject();
-                    int blockexp = obj.getInt(name, 0);
+            if (e.unit instanceof Playerc) {
+                Playerc player = (Playerc) e.unit;
+                PlayerData target = playerDB.get(player.uuid());
+                if (!e.breaking && player.builder().buildRequest() != null && !target.error && e.tile != null && player.builder().buildRequest() != null) {
+                    String name = e.tile.block().name;
+                    try {
+                        JsonObject obj = JsonValue.readHjson(root.child("Exp.hjson").reader()).asObject();
+                        int blockexp = obj.getInt(name, 0);
 
-                    target.lastplacename = e.tile.block().name;
-                    target.placecount++;
-                    target.exp = target.exp + blockexp;
-                    if (e.player.buildRequest().block == Blocks.thoriumReactor) target.reactorcount++;
-                } catch (Exception ex) {
-                    new CrashReport(ex);
-                }
-
-                target.grief_build_count++;
-                target.grief_tilelist.add(new short[]{e.tile.x, e.tile.y});
-
-                // 메세지 블럭을 설치했을 경우, 해당 블럭을 감시하기 위해 위치를 저장함.
-                if (e.tile.entity.block == Blocks.message) {
-                    pluginData.messagemonitor.add(new PluginData.messagemonitor(e.tile));
-                }
-
-                // 플레이어가 토륨 원자로를 만들었을 때, 감시를 위해 그 원자로의 위치를 저장함.
-                if (e.tile.entity.block == Blocks.thoriumReactor) {
-                    pluginData.nukeposition.add(e.tile);
-                    pluginData.nukedata.add(e.tile);
-                }
-
-                if (config.debug && config.antigrief) {
-                    Log.info("antigrief-build-finish", e.player.name(), e.tile.block().name, e.tile.x, e.tile.y);
-                }
-
-                // 필터 아트 감지
-                int sorter_count = 0;
-                //int conveyor_count = 0;
-                for (short[] t : target.grief_tilelist) {
-                    Tile tile = world.tile(t[0], t[1]);
-                    if (tile != null && tile.block() != null) {
-                        if (tile.block() == Blocks.sorter || tile.block() == Blocks.invertedSorter) sorter_count++;
+                        target.lastplacename = e.tile.block().name;
+                        target.placecount++;
+                        target.exp = target.exp + blockexp;
+                        if (player.builder().buildRequest().block == Blocks.thoriumReactor) target.reactorcount++;
+                    } catch (Exception ex) {
+                        new CrashReport(ex);
                     }
-                    //if(tile.entity.block == Blocks.conveyor || tile.entity.block == Blocks.armoredConveyor || tile.entity.block == Blocks.titaniumConveyor) conveyor_count++;
-                }
-                if (sorter_count > 20) {
+
+                    target.grief_build_count++;
+                    target.grief_tilelist.add(new short[]{e.tile.x, e.tile.y});
+
+                    // 메세지 블럭을 설치했을 경우, 해당 블럭을 감시하기 위해 위치를 저장함.
+                    if (e.tile.block() == Blocks.message) {
+                        pluginData.messagemonitor.add(new PluginData.messagemonitor(e.tile));
+                    }
+
+                    // 플레이어가 토륨 원자로를 만들었을 때, 감시를 위해 그 원자로의 위치를 저장함.
+                    if (e.tile.block() == Blocks.thoriumReactor) {
+                        pluginData.nukeposition.add(e.tile);
+                        pluginData.nukedata.add(e.tile);
+                    }
+
+                    if (config.debug && config.antigrief) {
+                        Log.info("antigrief-build-finish", player.name(), e.tile.block().name, e.tile.x, e.tile.y);
+                    }
+
+                    // 필터 아트 감지
+                    int sorter_count = 0;
+                    //int conveyor_count = 0;
                     for (short[] t : target.grief_tilelist) {
                         Tile tile = world.tile(t[0], t[1]);
-                        if (tile != null && tile.entity != null && tile.entity.block != null) {
-                            if (tile.entity.block == Blocks.sorter || tile.entity.block == Blocks.invertedSorter) {
-                                Call.onDeconstructFinish(tile, Blocks.air, e.player.id);
+                        if (tile != null && tile.block() != null) {
+                            if (tile.block() == Blocks.sorter || tile.block() == Blocks.invertedSorter) sorter_count++;
+                        }
+                        //if(tile.entity.block == Blocks.conveyor || tile.entity.block == Blocks.armoredConveyor || tile.entity.block == Blocks.titaniumConveyor) conveyor_count++;
+                    }
+                    if (sorter_count > 20) {
+                        for (short[] t : target.grief_tilelist) {
+                            Tile tile = world.tile(t[0], t[1]);
+                            if (tile != null && tile.entity != null && tile.block() != null) {
+                                if (tile.block() == Blocks.sorter || tile.block() == Blocks.invertedSorter) {
+                                    Call.onDeconstructFinish(tile, Blocks.air, player.id());
+                                }
                             }
                         }
+                        target.grief_tilelist(new ArrayList<>());
                     }
-                    target.grief_tilelist(new ArrayList<>());
                 }
             }
         });
@@ -498,7 +500,7 @@ public class Event {
         Events.on(EventType.BuildSelectEvent.class, e -> {
             if (e.builder instanceof Playerc && e.builder.buildRequest() != null && !e.builder.buildRequest().block.name.matches(".*build.*") && e.tile.block() != Blocks.air) {
                 if (e.breaking) {
-                    PlayerData target = playerDB.get(((Player) e.builder).uuid);
+                    PlayerData target = playerDB.get(((Playerc) e.builder).uuid());
                     String name = e.tile.block().name;
                     try {
                         JsonObject obj = JsonValue.readHjson(root.child("Exp.hjson").reader()).asObject();
@@ -509,7 +511,7 @@ public class Event {
                         target.exp = target.exp + blockexp;
                     } catch (Exception ex) {
                         new CrashReport(ex);
-                        Call.onKick(((Player) e.builder).con, new Bundle(target.locale).get("not-logged"));
+                        Call.onKick(((Playerc) e.builder).con(), new Bundle(target.locale).get("not-logged"));
                     }
 
                     // 메세지 블럭을 파괴했을 때, 위치가 저장된 데이터를 삭제함
@@ -534,8 +536,8 @@ public class Event {
                             if (obj.get(name) != null) {
                                 int blockreqlevel = obj.getInt(name, 999);
                                 if (level < blockreqlevel) {
-                                    Call.onDeconstructFinish(e.tile, e.tile.block(), ((Player) e.builder).id);
-                                    ((Player) e.builder).sendMessage(new Bundle(playerDB.get(((Player) e.builder).uuid).locale).get("epg-block-require", name, blockreqlevel));
+                                    Call.onDeconstructFinish(e.tile, e.tile.block(), ((Playerc) e.builder).id());
+                                    ((Playerc) e.builder).sendMessage(new Bundle(playerDB.get(((Playerc) e.builder).uuid()).locale).get("epg-block-require", name, blockreqlevel));
                                 }
                             } else {
                                 Log.err("epg-block-not-valid", name);
@@ -559,7 +561,7 @@ public class Event {
                     // if (target.grief_destory_count > 30) nLog.info(target.name + " 가 블럭을 빛의 속도로 파괴하고 있습니다.");
                 }
                 if (config.debug && config.antigrief) {
-                    Log.info("antigrief-destroy", ((Player) e.builder).name, e.tile.block().name, e.tile.x, e.tile.y);
+                    Log.info("antigrief-destroy", ((Playerc) e.builder).name(), e.tile.block().name, e.tile.x, e.tile.y);
                 }
             }
         });
@@ -568,13 +570,13 @@ public class Event {
         Events.on(EventType.UnitDestroyEvent.class, e -> {
             // 뒤진(?) 유닛이 플레이어일때
             if (e.unit instanceof Playerc) {
-                Playerc player = (Player) e.unit;
+                Playerc player = (Playerc) e.unit;
                 PlayerData target = playerDB.get(player.uuid());
                 if (!state.teams.get(player.team()).cores.isEmpty()) target.deathcount(target.deathcount++);
             }
 
             // 터진 유닛수만큼 카운트해줌
-            if (playerGroup != null && Groups.player.size() > 0) {
+            if (Groups.player.size() > 0) {
                 for (int i = 0; i < Groups.player.size(); i++) {
                     Playerc player = Groups.player.index(i);
                     PlayerData target = playerDB.get(player.uuid());
@@ -591,9 +593,9 @@ public class Event {
                 }
 
                 for (Playerc player : Groups.player) {
-                    player.sendMessage(new Bundle(playerDB.get(player.uuid).locale).get("player-banned", e.player.name));
-                    if (netServer.admins.isIDBanned(player.uuid)) {
-                        player.con.kick(Packets.KickReason.banned);
+                    player.sendMessage(new Bundle(playerDB.get(player.uuid()).locale).get("player-banned", e.player.name()));
+                    if (netServer.admins.isIDBanned(player.uuid())) {
+                        player.con().kick(Packets.KickReason.banned);
                     }
                 }
             });
@@ -612,7 +614,7 @@ public class Event {
 
         // 이건 밴 해제되었을 때 작동
         Events.on(EventType.PlayerUnbanEvent.class, e -> {
-            if (client.activated) client.request(Client.Request.unbanid, null, e.player.uuid + "|<unknown>");
+            if (client.activated) client.request(Client.Request.unbanid, null, e.player.uuid() + "|<unknown>");
         });
 
         // 이건 IP 밴이 해제되었을 때 작동
