@@ -68,11 +68,6 @@ public class Config {
     public LocalTime savetime;
     public boolean rollback;
     public int slotnumber;
-    public boolean autodifficulty;
-    public int difficultyEasy;
-    public int difficultyNormal;
-    public int difficultyHard;
-    public int difficultyInsane;
     public boolean border;
     public int spawnlimit;
     public String prefix;
@@ -86,7 +81,6 @@ public class Config {
         JsonObject network;
         JsonObject anti;
         JsonObject features;
-        JsonObject difficulty;
         JsonObject tr;
         JsonObject auth;
         JsonObject discord;
@@ -103,7 +97,7 @@ public class Config {
             obj.add("settings", new JsonObject().add("database", empty));
             obj.add("network", empty);
             obj.add("antigrief", empty);
-            obj.add("features", new JsonObject().add("difficulty", empty).add("translate", empty));
+            obj.add("features", new JsonObject().add("translate", empty));
             obj.add("auth", new JsonObject().add("discord", empty));
         }
 
@@ -164,13 +158,6 @@ public class Config {
         eventport = features.getString("eventport", "8000-8050");
         cupdatei = features.getInt("cupdatei", 1000);
 
-        difficulty = features.get("difficulty").asObject();
-        autodifficulty = difficulty.getBoolean("auto-difficulty", false);
-        difficultyEasy = difficulty.getInt("easy", 2);
-        difficultyNormal = difficulty.getInt("normal", 4);
-        difficultyHard = difficulty.getInt("hard", 6);
-        difficultyInsane = difficulty.getInt("insane", 10);
-
         tr = features.get("translate").asObject();
         translate = tr.getBoolean("translate", false);
         translateid = tr.getString("translateid", "none");
@@ -221,7 +208,6 @@ public class Config {
         JsonObject network = new JsonObject();
         JsonObject anti = new JsonObject();
         JsonObject features = new JsonObject();
-        JsonObject difficulty = new JsonObject();
         JsonObject auth = new JsonObject();
         JsonObject discord = new JsonObject();
         JsonObject tr = new JsonObject();
@@ -297,14 +283,6 @@ public class Config {
         features.add("eventport", eventport, bundle.get("config.feature.event.port"));
         features.add("cupdatei", cupdatei, bundle.get("config.feature.colornick"));
 
-        // 난이도 설정 (features 상속)
-        features.add("difficulty", difficulty, bundle.get("config.auto-difficulty"));
-        difficulty.add("auto-difficulty", autodifficulty);
-        difficulty.add("easy", difficultyEasy);
-        difficulty.add("normal", difficultyNormal);
-        difficulty.add("hard", difficultyHard);
-        difficulty.add("insane", difficultyInsane);
-
         // 번역 설정 (features 상속)
         features.add("translate", tr, bundle.get("config.feature.papago"));
         tr.add("translate", translate);
@@ -377,11 +355,6 @@ public class Config {
         LocalTime savetime = LocalTime.parse(obj.getString("savetime", "00:10:00"), DateTimeFormatter.ofPattern("HH:mm:ss"));
         boolean rollback = obj.getBoolean("rollback", false);
         int slotnumber = obj.getInt("slotnumber", 1000);
-        boolean autodifficulty = obj.getBoolean("autodifficulty", false);
-        int difficultyEasy = obj.getInt("difficultyEasy", 2);
-        int difficultyNormal = obj.getInt("difficultyNormal", 4);
-        int difficultyHard = obj.getInt("difficultyHard", 6);
-        int difficultyInsane = obj.getInt("difficultyInsane", 10);
         boolean border = obj.getBoolean("border", false);
         int spawnlimit = obj.getInt("spawnlimit", 500);
         String prefix = obj.getString("prefix", "[green][Essentials] []");
@@ -392,7 +365,7 @@ public class Config {
         obj.add("settings", new JsonObject().add("database", empty));
         obj.add("network", empty);
         obj.add("antigrief", empty);
-        obj.add("features", new JsonObject().add("difficulty", empty).add("translate", empty));
+        obj.add("features", new JsonObject().add("translate", empty));
         obj.add("auth", new JsonObject().add("discord", empty));
 
         locale = tool.TextToLocale(obj.getString("language", locale.toString()));
@@ -404,7 +377,6 @@ public class Config {
         JsonObject network = new JsonObject();
         JsonObject anti = new JsonObject();
         JsonObject features = new JsonObject();
-        JsonObject difficulty = new JsonObject();
         JsonObject auth = new JsonObject();
         JsonObject discord = new JsonObject();
         JsonObject tr = new JsonObject();
@@ -467,13 +439,6 @@ public class Config {
         features.add("spawnlimit", spawnlimit, bundle.get("config.feature.spawn-limit"));
         features.add("eventport", eventport, bundle.get("config.feature.event.port"));
         features.add("cupdatei", cupdatei, bundle.get("config.feature.colornick"));
-
-        features.add("difficulty", difficulty, bundle.get("config.auto-difficulty"));
-        difficulty.add("auto-difficulty", autodifficulty);
-        difficulty.add("easy", difficultyEasy);
-        difficulty.add("normal", difficultyNormal);
-        difficulty.add("hard", difficultyHard);
-        difficulty.add("insane", difficultyInsane);
 
         features.add("translate", tr, bundle.get("config.feature.papago"));
         tr.add("translate", translate);

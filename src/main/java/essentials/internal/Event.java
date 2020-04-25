@@ -10,11 +10,11 @@ import essentials.external.IpAddressMatcher;
 import essentials.network.Client;
 import essentials.network.Server;
 import mindustry.content.Blocks;
-import mindustry.entities.type.Player;
-import mindustry.game.Difficulty;
 import mindustry.game.EventType;
 import mindustry.game.Team;
 import mindustry.gen.Call;
+import mindustry.gen.Groups;
+import mindustry.gen.Playerc;
 import mindustry.net.Packets;
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
 import org.hjson.JsonObject;
@@ -37,33 +37,32 @@ import static essentials.PluginVars.*;
 import static essentials.external.DriverLoader.URLDownload;
 import static mindustry.Vars.*;
 import static mindustry.core.NetClient.colorizeName;
-import static mindustry.core.NetClient.onSetRules;
 import static org.hjson.JsonValue.readJSON;
 
 public class Event {
     public Event() {
         Events.on(EventType.TapConfigEvent.class, e -> {
-            if (e.tile.entity != null && e.tile.entity.block != null && e.player != null && e.player.name != null && config.alertaction) {
-                tool.sendMessageAll("tap-config", e.player.name, e.tile.entity.block.name);
+            if (e.tile.block() != null && e.player != null && config.alertaction) {
+                tool.sendMessageAll("tap-config", e.player.name(), e.tile.block().name);
                 if (config.debug)
-                    Log.info("anti-grief.build.config", e.player.name, e.tile.block().name, e.tile.x, e.tile.y);
+                    Log.info("anti-grief.build.config", e.player.name(), e.tile.block().name, e.tile.x(), e.tile.y());
             }
         });
 
         Events.on(EventType.TapEvent.class, e -> {
-            PlayerData playerData = playerDB.get(e.player.uuid);
+            PlayerData playerData = playerDB.get(e.player.uuid());
 
             if (!playerData.error) {
                 for (PluginData.jumpzone data : pluginData.jumpzone) {
                     int port = data.port;
                     String ip = data.ip;
 
-                    if (e.tile.x > data.getStartTile().x && e.tile.x < data.getFinishTile().x) {
-                        if (e.tile.y > data.getStartTile().y && e.tile.y < data.getFinishTile().y) {
-                            Log.info("player.jumped", e.player.name, data.ip + ":" + data.port);
+                    if (e.tile.x() > data.getStartTile().x && e.tile.x() < data.getFinishTile().x) {
+                        if (e.tile.y() > data.getStartTile().y && e.tile.y() < data.getFinishTile().y) {
+                            Log.info("player.jumped", e.player.name(), data.ip + ":" + data.port);
                             playerData.connected(false);
                             playerData.connserver("none");
-                            Call.onConnect(e.player.con, ip, port);
+                            Call.onConnect(e.player.con(), ip, port);
                         }
                     }
                 }
@@ -71,14 +70,14 @@ public class Event {
         });
 
         Events.on(EventType.WithdrawEvent.class, e -> {
-            if (e.tile.entity != null && e.player.item().item != null && e.player.name != null && config.antigrief) {
-                tool.sendMessageAll("log.withdraw", e.player.name, e.player.item().item.name, e.amount, e.tile.block().name);
+            if (e.player.miner().item() != null && e.player.name() != null && config.antigrief) {
+                tool.sendMessageAll("log.withdraw", e.player.name(), e.player.miner().item().name, e.amount, e.tile.block().name);
                 if (config.debug)
-                    Log.info("log.withdraw", e.player.name, e.player.item().item.name, e.amount, e.tile.block().name);
+                    Log.info("log.withdraw", e.player.name(), e.player.miner().item().name, e.amount, e.tile.block().name);
                 if (state.rules.pvp) {
                     if (e.item.flammability > 0.001f) {
-                        e.player.sendMessage(new Bundle(playerDB.get(e.player.uuid).locale).get("system.flammable.disabled"));
-                        e.player.clearItem();
+                        e.player.sendMessage(new Bundle(playerDB.get(e.player.uuid()).locale).get("system.flammable.disabled"));
+                        e.player.miner().clearItem();
                     }
                 }
             }
@@ -94,22 +93,22 @@ public class Event {
                     }
                 }
                 if (index == 1) {
-                    for (int i = 0; i < playerGroup.size(); i++) {
-                        Player player = playerGroup.all().get(i);
-                        PlayerData target = playerDB.get(player.uuid);
+                    for (int i = 0; i < Groups.player.size(); i++) {
+                        Playerc player = Groups.player.getByID(i);
+                        PlayerData target = playerDB.get(player.uuid());
                         if (target.isLogin) {
-                            if (player.getTeam().name.equals(e.winner.name)) {
+                            if (player.team() == e.winner) {
                                 target.pvpwincount(target.pvpwincount++);
-                            } else if (!player.getTeam().name.equals(e.winner.name)) {
+                            } else if (player.team() != e.winner) {
                                 target.pvplosecount(target.pvplosecount++);
                             }
                         }
                     }
                 }
             } else if (state.rules.attackMode) {
-                for (int i = 0; i < playerGroup.size(); i++) {
-                    Player player = playerGroup.all().get(i);
-                    PlayerData target = playerDB.get(player.uuid);
+                for (int i = 0; i < Groups.player.size(); i++) {
+                    Playerc player = Groups.player.getByID(i);
+                    PlayerData target = playerDB.get(player.uuid());
                     if (target.isLogin) {
                         target.attackclear(target.attackclear++);
                     }
@@ -128,11 +127,11 @@ public class Event {
         Events.on(EventType.PlayerConnect.class, e -> {
             // 닉네임이 블랙리스트에 등록되어 있는지 확인
             for (String s : pluginData.blacklist) {
-                if (e.player.name.matches(s)) {
+                if (e.player.name().matches(s)) {
                     try {
                         Locale locale = tool.getGeo(e.player);
-                        Call.onKick(e.player.con, new Bundle(locale).get("system.nickname.blacklisted.kick"));
-                        Log.info("system.nickname.blacklisted", e.player.name);
+                        Call.onKick(e.player.con(), new Bundle(locale).get("system.nickname.blacklisted.kick"));
+                        Log.info("system.nickname.blacklisted", e.player.name());
                     } catch (Exception ex) {
                         new CrashReport(ex);
                     }
@@ -140,23 +139,24 @@ public class Event {
             }
 
             if (config.strictname) {
-                if (e.player.name.length() > 32) Call.onKick(e.player.con, "Nickname too long!");
-                //if (e.player.name.matches(".*\\[.*].*"))
-                //    Call.onKick(e.player.con, "Color tags can't be used for nicknames on this server.");
-                if (e.player.name.contains("　"))
-                    Call.onKick(e.player.con, "Don't use blank speical charactor nickname!");
-                if (e.player.name.contains(" ")) Call.onKick(e.player.con, "Nicknames can't be used on this server!");
-                if (e.player.name.replaceAll("\\([.*?]\\)", "").length() == 0)
-                    Call.onKick(e.player.con, "Can't use only color tags nickname in this server.");
+                if (e.player.name().length() > 32) Call.onKick(e.player.con(), "Nickname too long!");
+                //if (e.player.name().matches(".*\\[.*].*"))
+                //    Call.onKick(e.player.con(), "Color tags can't be used for nicknames on this server.");
+                if (e.player.name().contains("　"))
+                    Call.onKick(e.player.con(), "Don't use blank speical charactor nickname!");
+                if (e.player.name().contains(" "))
+                    Call.onKick(e.player.con(), "Nicknames can't be used on this server!");
+                if (e.player.name().replaceAll("\\([.*?]\\)", "").length() == 0)
+                    Call.onKick(e.player.con(), "Can't use only color tags nickname in this server.");
             }
 
             /*if(config.isStrictname()){
                 if(e.player.name.length() < 3){
-                    player.con.kick("The nickname is too short!\n닉네임이 너무 짧습니다!");
+                    player.con().kick("The nickname is too short!\n닉네임이 너무 짧습니다!");
                     log(LogType.log,"nickname-short");
                 }
                 if(e.player.name.matches("^(?=.*\\\\d)(?=.*[~`!@#$%\\\\^&*()-])(?=.*[a-z])(?=.*[A-Z])$")){
-                    e.player.con.kick("Server doesn't allow special characters.\n서버가 특수문자를 허용하지 않습니다.");
+                    e.player.con().kick("Server doesn't allow special characters.\n서버가 특수문자를 허용하지 않습니다.");
                     log(LogType.log,"nickname-special", player.name);
                 }
             }*/
@@ -164,38 +164,38 @@ public class Event {
 
         // 플레이어가 아이템을 특정 블록에다 직접 가져다 놓았을 때
         Events.on(EventType.DepositEvent.class, e -> {
-            if (e.player.item().amount > e.player.mech.itemCapacity) {
-                player.con.kick("Invalid request!");
+            if (e.player.miner().stack().amount > e.player.miner().itemCapacity()) {
+                player.con().kick("Invalid request!");
                 return;
             }
             if (config.alertaction)
-                tool.sendMessageAll("anti-grief.deposit", e.player.name, e.player.item().item.name, e.tile.block().name);
+                tool.sendMessageAll("anti-grief.deposit", e.player.name(), e.player.miner().item().name, e.tile.block().name);
         });
 
         // 플레이어가 서버에 들어왔을 때
         Events.on(EventType.PlayerJoin.class, e -> {
             players.add(e.player);
-            e.player.isAdmin = false;
+            e.player.admin(false);
             Thread t = new Thread(() -> {
-                Thread.currentThread().setName(e.player.name + " Player Join thread");
-                PlayerData playerData = playerDB.load(e.player.uuid);
+                Thread.currentThread().setName(e.player.name() + " Player Join thread");
+                PlayerData playerData = playerDB.load(e.player.uuid());
                 Bundle bundle = new Bundle(playerData.locale);
 
                 if (config.loginenable) {
                     if (config.passwordmethod.equals("mixed")) {
                         if (!playerData.error && config.autologin) {
                             if (playerData.udid != 0L) {
-                                new Thread(() -> Call.onConnect(e.player.con, serverIP, 7060)).start();
+                                new Thread(() -> Call.onConnect(e.player.con(), serverIP, 7060)).start();
                             } else {
                                 e.player.sendMessage(bundle.get("account.autologin"));
                                 playerCore.load(e.player);
                             }
                         } else {
                             Locale lc = tool.getGeo(e.player);
-                            if (playerDB.register(e.player.name, e.player.uuid, lc.getDisplayCountry(), lc.toString(), lc.getDisplayLanguage(), true, serverIP, "default", 0L, e.player.name, "none")) {
+                            if (playerDB.register(e.player.name(), e.player.uuid(), lc.getDisplayCountry(), lc.toString(), lc.getDisplayLanguage(), true, serverIP, "default", 0L, e.player.name(), "none")) {
                                 playerCore.load(e.player);
                             } else {
-                                Call.onKick(e.player.con, new Bundle().get("plugin-error-kick"));
+                                Call.onKick(e.player.con(), new Bundle().get("plugin-error-kick"));
                             }
                         }
                     } else if (config.passwordmethod.equals("discord")) {
@@ -210,7 +210,7 @@ public class Event {
                             } else {
                                 message = new Bundle(language).get("system.login.require.password");
                             }
-                            Call.onInfoMessage(e.player.con, message);
+                            Call.onInfoMessage(e.player.con(), message);
                         }
                     } else {
                         if (!playerData.error && config.autologin) {
@@ -224,7 +224,7 @@ public class Event {
                             } else {
                                 message = new Bundle(language).get("system.login.require.password");
                             }
-                            Call.onInfoMessage(e.player.con, message);
+                            Call.onInfoMessage(e.player.con(), message);
                         }
                     }
                 } else {
@@ -234,10 +234,10 @@ public class Event {
                         playerCore.load(e.player);
                     } else {
                         Locale lc = tool.getGeo(e.player);
-                        if (playerDB.register(e.player.name, e.player.uuid, lc.getDisplayCountry(), lc.toString(), lc.getDisplayLanguage(), true, serverIP, "default", 0L, e.player.name, "none")) {
+                        if (playerDB.register(e.player.name(), e.player.uuid(), lc.getDisplayCountry(), lc.toString(), lc.getDisplayLanguage(), true, serverIP, "default", 0L, e.player.name(), "none")) {
                             playerCore.load(e.player);
                         } else {
-                            Call.onKick(e.player.con, new Bundle().get("plugin-error-kick"));
+                            Call.onKick(e.player.con(), new Bundle().get("plugin-error-kick"));
                         }
                     }
                 }
@@ -248,12 +248,12 @@ public class Event {
                         InputStream reader = getClass().getResourceAsStream("/ipv4.txt");
                         BufferedReader br = new BufferedReader(new InputStreamReader(reader));
 
-                        String ip = netServer.admins.getInfo(e.player.uuid).lastIP;
+                        String ip = netServer.admins.getInfo(e.player.uuid()).lastIP;
                         String line;
                         while ((line = br.readLine()) != null) {
                             IpAddressMatcher match = new IpAddressMatcher(line);
                             if (match.matches(ip)) {
-                                Call.onKick(e.player.con, new Bundle().get("anti-grief.vpn"));
+                                Call.onKick(e.player.con(), new Bundle().get("anti-grief.vpn"));
                             }
                         }
                     } catch (IOException ex) {
@@ -268,45 +268,26 @@ public class Event {
                     Call.onSetRules(state.rules);
                     PluginVars.PvPPeace = true;
                 }
-
-                // 플레이어 인원별 난이도 설정
-                if (config.autodifficulty) {
-                    int total = playerGroup.size();
-                    if (config.difficultyEasy >= total) {
-                        state.rules.waveSpacing = Difficulty.valueOf("easy").waveTime * 60 * 60 * 2;
-                        tool.sendMessageAll("system.difficulty.easy");
-                    } else if (config.difficultyNormal == total) {
-                        state.rules.waveSpacing = Difficulty.valueOf("normal").waveTime * 60 * 60 * 2;
-                        tool.sendMessageAll("system.difficulty.normal");
-                    } else if (config.difficultyHard == total) {
-                        state.rules.waveSpacing = Difficulty.valueOf("hard").waveTime * 60 * 60 * 2;
-                        tool.sendMessageAll("system.difficulty.hard");
-                    } else if (config.difficultyInsane <= total) {
-                        state.rules.waveSpacing = Difficulty.valueOf("insane").waveTime * 60 * 60 * 2;
-                        tool.sendMessageAll("system.difficulty.insane");
-                    }
-                    onSetRules(state.rules);
-                }
             });
             t.start();
         });
 
         // 플레이어가 서버에서 탈주했을 때
         Events.on(EventType.PlayerLeave.class, e -> {
-            PlayerData player = playerDB.get(e.player.uuid);
+            PlayerData player = playerDB.get(e.player.uuid());
             if (player.isLogin) {
                 player.connected(false);
                 player.connserver("none");
                 if (state.rules.pvp && !state.gameOver) player.pvpbreakout(player.pvpbreakout++);
             }
             playerDB.save(player);
-            playerData.remove(p -> p.uuid.equals(e.player.uuid));
+            playerData.remove(p -> p.uuid.equals(e.player.uuid()));
             players.remove(e.player);
         });
 
         // 플레이어가 수다떨었을 때
         Events.on(EventType.PlayerChatEvent.class, e -> {
-            PlayerData playerData = playerDB.get(e.player.uuid);
+            PlayerData playerData = playerDB.get(e.player.uuid());
             Bundle bundle = new Bundle(playerData.locale);
 
             if (!playerData.error) {
@@ -315,19 +296,19 @@ public class Event {
                 if (!check.equals("/")) {
                     if (e.message.equals("y") && vote.status()) {
                         // 투표가 진행중일때
-                        if (vote.getVoted().contains(e.player.uuid)) {
+                        if (vote.getVoted().contains(e.player.uuid())) {
                             e.player.sendMessage(bundle.get("vote.already-voted"));
                         } else {
-                            vote.set(e.player.uuid);
+                            vote.set(e.player.uuid());
                         }
                     } else {
                         if (!playerData.mute) {
                             if (perm.permission_user.get(playerData.uuid).asObject().get("prefix") != null) {
                                 if (!playerData.crosschat)
-                                    Call.sendMessage(perm.permission_user.get(playerData.uuid).asObject().get("prefix").asString().replace("%1", colorizeName(e.player.id, e.player.name)).replaceAll("%2", e.message));
+                                    Call.sendMessage(perm.permission_user.get(playerData.uuid).asObject().get("prefix").asString().replace("%1", colorizeName(e.player.id(), e.player.name())).replaceAll("%2", e.message));
                             } else {
                                 if (!playerData.crosschat)
-                                    Call.sendMessage("[orange]" + colorizeName(e.player.id, e.player.name) + "[orange] >[white] " + e.message);
+                                    Call.sendMessage("[orange]" + colorizeName(e.player.id(), e.player.name()) + "[orange] >[white] " + e.message);
                             }
 
                             // 서버간 대화기능 작동
@@ -336,7 +317,7 @@ public class Event {
                                     client.request(Client.Request.chat, e.player, e.message);
                                 } else if (config.serverenable) {
                                     // 메세지를 모든 클라이언트에게 전송함
-                                    String msg = "[" + e.player.name + "]: " + e.message;
+                                    String msg = "[" + e.player.name() + "]: " + e.message;
                                     try {
                                         for (Server.service ser : server.list) {
                                             ser.os.writeBytes(Base64.getEncoder().encodeToString(tool.encrypt(msg, ser.spec, ser.cipher)));
@@ -351,7 +332,7 @@ public class Event {
                                 }
                             }
                         }
-                        Log.info("<&y" + e.player.name + ": &lm" + e.message + "&lg>");
+                        Log.info("<&y" + e.player.name() + ": &lm" + e.message + "&lg>");
                     }
                 }
 
@@ -361,9 +342,8 @@ public class Event {
                 // 번역
                 if (config.translate) {
                     try {
-                        for (int i = 0; i < playerGroup.size(); i++) {
-                            Player p = playerGroup.all().get(i);
-                            PlayerData target = playerDB.get(p.uuid);
+                        for (Playerc p : Groups.player) {
+                            PlayerData target = playerDB.get(p.uuid());
                             if (!target.error) {
                                 String[] support = {"ko", "en", "zh-CN", "zh-TW", "es", "fr", "vi", "th", "id"};
                                 String language = target.language;
@@ -392,7 +372,7 @@ public class Event {
                                         if (object.get("error") != null) {
                                             String result = object.get("message").asObject().get("result").asObject().getString("translatedText", "none");
                                             if (target.translate) {
-                                                p.sendMessage("[green]" + e.player.name + "[orange]: [white]" + result);
+                                                p.sendMessage("[green]" + e.player.name() + "[orange]: [white]" + result);
                                             }
                                         }
                                     }
@@ -408,54 +388,58 @@ public class Event {
 
         // 플레이어가 블럭을 건설했을 때
         Events.on(EventType.BlockBuildEndEvent.class, e -> {
-            PlayerData target = playerDB.get(e.player.uuid);
-            if (!e.breaking && e.player.buildRequest() != null && !target.error && e.tile.block() != null && e.player.buildRequest() != null) {
-                String name = e.tile.block().name;
-                try {
-                    JsonObject obj = JsonValue.readHjson(root.child("Exp.hjson").reader()).asObject();
-                    int blockexp = obj.getInt(name, 0);
+            if (e.unit instanceof Playerc) {
+                Playerc player = (Playerc) e.unit;
+                PlayerData target = playerDB.get(player.uuid());
+                if (!e.breaking && player.builder().buildRequest() != null && !target.error && e.tile.block() != null) {
+                    String name = e.tile.block().name;
+                    try {
+                        JsonObject obj = JsonValue.readHjson(root.child("Exp.hjson").reader()).asObject();
+                        int blockexp = obj.getInt(name, 0);
 
-                    target.lastplacename = e.tile.block().name;
-                    target.placecount++;
-                    target.exp = target.exp + blockexp;
-                    if (e.player.buildRequest().block == Blocks.thoriumReactor) target.reactorcount++;
-                } catch (Exception ex) {
-                    new CrashReport(ex);
-                }
+                        target.lastplacename = e.tile.block().name;
+                        target.placecount++;
+                        target.exp = target.exp + blockexp;
+                        if (player.builder().buildRequest().block == Blocks.thoriumReactor) target.reactorcount++;
+                    } catch (Exception ex) {
+                        new CrashReport(ex);
+                    }
 
-                // 메세지 블럭을 설치했을 경우, 해당 블럭을 감시하기 위해 위치를 저장함.
-                if (e.tile.entity.block == Blocks.message) {
-                    pluginData.messagemonitor.add(new PluginData.messagemonitor(e.tile));
-                }
+                    // 메세지 블럭을 설치했을 경우, 해당 블럭을 감시하기 위해 위치를 저장함.
+                    if (e.tile.block() == Blocks.message) {
+                        pluginData.messagemonitor.add(new PluginData.messagemonitor(e.tile));
+                    }
 
-                // 플레이어가 토륨 원자로를 만들었을 때, 감시를 위해 그 원자로의 위치를 저장함.
-                if (e.tile.entity.block == Blocks.thoriumReactor) {
-                    pluginData.nukeposition.add(e.tile);
-                    pluginData.nukedata.add(e.tile);
-                }
+                    // 플레이어가 토륨 원자로를 만들었을 때, 감시를 위해 그 원자로의 위치를 저장함.
+                    if (e.tile.block() == Blocks.thoriumReactor) {
+                        pluginData.nukeposition.add(e.tile);
+                        pluginData.nukedata.add(e.tile);
+                    }
 
-                if (config.debug && config.antigrief) {
-                    Log.info("anti-grief.build.finish", e.player.name, e.tile.block().name, e.tile.x, e.tile.y);
+                    if (config.debug && config.antigrief) {
+                        Log.info("anti-grief.build.finish", player.name(), e.tile.block().name, e.tile.x, e.tile.y);
+                    }
                 }
             }
         });
 
         // 플레이어가 블럭을 뽀갰을 때
         Events.on(EventType.BuildSelectEvent.class, e -> {
-            if (e.builder instanceof Player && e.builder.buildRequest() != null && !e.builder.buildRequest().block.name.matches(".*build.*") && e.tile.block() != Blocks.air) {
-                if (e.breaking) {
-                    PlayerData target = playerDB.get(((Player) e.builder).uuid);
+            if (e.builder instanceof Playerc) {
+                Playerc player = (Playerc) e.builder;
+                PlayerData playerData = playerDB.get(player.uuid());
+                if (e.builder.buildRequest() != null && !e.builder.buildRequest().block.name.matches(".*build.*") && e.tile.block() != Blocks.air && e.breaking) {
                     String name = e.tile.block().name;
                     try {
                         JsonObject obj = JsonValue.readHjson(root.child("Exp.hjson").reader()).asObject();
                         int blockexp = obj.getInt(name, 0);
 
-                        target.lastbreakname = e.tile.block().name;
-                        target.breakcount++;
-                        target.exp = target.exp + blockexp;
+                        playerData.lastbreakname(e.tile.block().name);
+                        playerData.breakcount(playerData.breakcount++);
+                        playerData.exp(playerData.exp + blockexp);
                     } catch (Exception ex) {
                         new CrashReport(ex);
-                        Call.onKick(((Player) e.builder).con, new Bundle(target.locale).get("not-logged"));
+                        Call.onKick(player.con(), new Bundle(playerData.locale).get("not-logged"));
                     }
 
                     // 메세지 블럭을 파괴했을 때, 위치가 저장된 데이터를 삭제함
@@ -474,14 +458,14 @@ public class Event {
 
                     // Exp Playing Game (EPG)
                     if (config.explimit) {
-                        int level = target.level;
+                        int level = playerData.level;
                         try {
                             JsonObject obj = JsonValue.readHjson(root.child("Exp.hjson").reader()).asObject();
                             if (obj.get(name) != null) {
                                 int blockreqlevel = obj.getInt(name, 999);
                                 if (level < blockreqlevel) {
-                                    Call.onDeconstructFinish(e.tile, e.tile.block(), ((Player) e.builder).id);
-                                    ((Player) e.builder).sendMessage(new Bundle(playerDB.get(((Player) e.builder).uuid).locale).get("system.epg.block-require", name, blockreqlevel));
+                                    Call.onDeconstructFinish(e.tile, e.tile.block(), player.id());
+                                    player.sendMessage(new Bundle(playerData.locale).get("system.epg.block-require", name, blockreqlevel));
                                 }
                             } else {
                                 Log.err("system.epg.block-not-valid", name);
@@ -492,7 +476,7 @@ public class Event {
                     }
                 }
                 if (config.debug && config.antigrief) {
-                    Log.info("anti-grief.destroy", ((Player) e.builder).name, e.tile.block().name, e.tile.x, e.tile.y);
+                    Log.info("anti-grief.destroy", player.name(), e.tile.block().name, e.tile.x, e.tile.y);
                 }
             }
         });
@@ -500,18 +484,17 @@ public class Event {
         // 유닛을 박살냈을 때
         Events.on(EventType.UnitDestroyEvent.class, e -> {
             // 뒤진(?) 유닛이 플레이어일때
-            if (e.unit instanceof Player) {
-                Player player = (Player) e.unit;
-                PlayerData target = playerDB.get(player.uuid);
-                if (!state.teams.get(player.getTeam()).cores.isEmpty()) target.deathcount(target.deathcount++);
+            if (e.unit instanceof Playerc) {
+                Playerc player = (Playerc) e.unit;
+                PlayerData target = playerDB.get(player.uuid());
+                if (!state.teams.get(player.team()).cores.isEmpty()) target.deathcount(target.deathcount++);
             }
 
             // 터진 유닛수만큼 카운트해줌
-            if (playerGroup != null && playerGroup.size() > 0) {
-                for (int i = 0; i < playerGroup.size(); i++) {
-                    Player player = playerGroup.all().get(i);
-                    PlayerData target = playerDB.get(player.uuid);
-                    if (!state.teams.get(player.getTeam()).cores.isEmpty()) target.killcount(target.killcount++);
+            if (Groups.player.size() > 0) {
+                for (Playerc player : Groups.player) {
+                    PlayerData target = playerDB.get(player.uuid());
+                    if (!state.teams.get(player.team()).cores.isEmpty()) target.killcount(target.killcount++);
                 }
             }
         });
@@ -523,10 +506,10 @@ public class Event {
                     client.request(Client.Request.bansync, null, null);
                 }
 
-                for (Player player : playerGroup.all()) {
-                    player.sendMessage(new Bundle(playerDB.get(player.uuid).locale).get("player.banned", e.player.name));
-                    if (netServer.admins.isIDBanned(player.uuid)) {
-                        player.con.kick(Packets.KickReason.banned);
+                for (Playerc player : Groups.player) {
+                    player.sendMessage(new Bundle(playerDB.get(player.uuid()).locale).get("player.banned", e.player.name()));
+                    if (netServer.admins.isIDBanned(player.uuid())) {
+                        player.con().kick(Packets.KickReason.banned);
                     }
                 }
             });
@@ -545,7 +528,7 @@ public class Event {
 
         // 이건 밴 해제되었을 때 작동
         Events.on(EventType.PlayerUnbanEvent.class, e -> {
-            if (client.activated) client.request(Client.Request.unbanid, null, e.player.uuid + "|<unknown>");
+            if (client.activated) client.request(Client.Request.unbanid, null, e.player.uuid() + "|<unknown>");
         });
 
         // 이건 IP 밴이 해제되었을 때 작동

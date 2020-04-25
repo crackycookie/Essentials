@@ -7,9 +7,9 @@ import essentials.internal.Bundle;
 import essentials.internal.CrashReport;
 import mindustry.Vars;
 import mindustry.content.Blocks;
-import mindustry.core.GameState;
-import mindustry.entities.type.Player;
 import mindustry.gen.Call;
+import mindustry.gen.Groups;
+import mindustry.gen.Playerc;
 import mindustry.world.Tile;
 import org.hjson.JsonObject;
 import org.jsoup.Jsoup;
@@ -18,7 +18,7 @@ import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
 import static essentials.Main.*;
-import static mindustry.Vars.*;
+import static mindustry.Vars.world;
 import static org.hjson.JsonValue.readJSON;
 
 public class Threads implements Runnable {
@@ -30,12 +30,11 @@ public class Threads implements Runnable {
             try {
                 // 로그인 요청 알림
                 if (delay == 20) {
-                    for (int a = 0; a < playerGroup.size(); a++) {
-                        Player p = playerGroup.all().get(a);
-                        PlayerData playerData = playerDB.get(p.uuid);
+                    for (Playerc p : Groups.player) {
+                        PlayerData playerData = playerDB.get(p.uuid());
                         if (playerData.error) {
                             String message;
-                            String json = Jsoup.connect("http://ipapi.co/" + Vars.netServer.admins.getInfo(p.uuid).lastIP + "/json").ignoreContentType(true).execute().body();
+                            String json = Jsoup.connect("http://ipapi.co/" + Vars.netServer.admins.getInfo(p.uuid()).lastIP + "/json").ignoreContentType(true).execute().body();
                             JsonObject result = readJSON(json).asObject();
                             Locale language = tool.TextToLocale(result.getString("languages", locale.toString()));
                             if (config.passwordmethod.equals("discord")) {
@@ -52,13 +51,16 @@ public class Threads implements Runnable {
                 }
 
                 // 외부 서버 플레이어 인원 - 메세지 블럭
-                for (int a = 0; a < pluginData.messagejump.size; a++) {
+                // TODO 메세지 블럭에 서버 현황 표시 또는 삭제
+                /*for (int a = 0; a < pluginData.messagejump.size; a++) {
                     if (state.is(GameState.State.playing)) {
-                        if (pluginData.messagejump.get(a).tile.entity.block != Blocks.message) {
+                        Tile tile = pluginData.messagejump.get(a).tile;
+                        if (tile.block() != Blocks.message) {
                             pluginData.messagejump.remove(a);
                             break;
                         }
-                        Call.setMessageBlockText(null, pluginData.messagejump.get(a).tile, "[green]Working...");
+                        MessageBlock.MessageBlockEntity entity = (MessageBlock.MessageBlockEntity) tile.entity;
+                        entity.message =
 
                         String[] arr = pluginData.messagejump.get(a).message.split(" ");
                         String ip = arr[1];
@@ -67,7 +69,7 @@ public class Threads implements Runnable {
                         int fa = a;
                         new PingHost(ip, port, result -> Call.setMessageBlockText(null, pluginData.messagejump.get(fa).tile, result != null ? "[green]" + result.players + " Players in this server." : "[scarlet]Server offline"));
                     }
-                }
+                }*/
 
                 // 서버 인원 확인
                 for (int i = 0; i < pluginData.jumpcount.size; i++) {
@@ -105,8 +107,8 @@ public class Threads implements Runnable {
             } catch (InterruptedException ignored) {
                 Thread.currentThread().interrupt();
             } catch (Exception e) {
-                for (Player p : playerGroup.all())
-                    Call.onKick(p.con, new Bundle(Locale.ENGLISH).get("plugin-error-kick"));
+                for (Playerc p : Groups.player)
+                    Call.onKick(p.con(), new Bundle(Locale.ENGLISH).get("plugin-error-kick"));
                 new CrashReport(e);
             }
         }

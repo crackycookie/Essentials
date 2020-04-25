@@ -1,8 +1,8 @@
 package essentials.core.player;
 
 import essentials.internal.CrashReport;
-import mindustry.entities.type.Player;
 import mindustry.gen.Call;
+import mindustry.gen.Playerc;
 import mindustry.net.Packets;
 
 import java.net.InetAddress;
@@ -17,24 +17,24 @@ import static essentials.PluginVars.serverIP;
 import static mindustry.Vars.netServer;
 
 public class PlayerCore {
-    public void load(Player player, String... AccountID) {
-        playerDB.remove(player.uuid);
-        PlayerData playerData = playerDB.load(AccountID.length > 0 ? player.uuid : player.uuid, AccountID);
+    public void load(Playerc player, String... AccountID) {
+        playerDB.remove(player.uuid());
+        PlayerData playerData = playerDB.load(AccountID.length > 0 ? player.uuid() : player.uuid(), AccountID);
         if (playerData.error) {
             new CrashReport(new Exception("DATA NOT FOUND"));
             return;
         }
 
         if (playerData.banned) {
-            netServer.admins.banPlayerID(player.uuid);
-            Call.onKick(player.con, Packets.KickReason.banned);
+            netServer.admins.banPlayerID(player.uuid());
+            Call.onKick(player.con(), Packets.KickReason.banned);
             return;
         }
 
         String motd = tool.getMotd(playerData.locale);
         int count = motd.split("\r\n|\r|\n").length;
         if (count > 10) {
-            Call.onInfoMessage(player.con, motd);
+            Call.onInfoMessage(player.con(), motd);
         } else {
             player.sendMessage(motd);
         }
@@ -45,15 +45,15 @@ public class PlayerCore {
             perm.saveAll();
         } else {
             if (config.realname || config.passwordmethod.equals("discord")) {
-                player.name = playerData.name;
+                player.name(playerData.name);
             } else {
-                player.name = perm.permission_user.get(playerData.uuid).asObject().get("name").asString();
+                player.name(perm.permission_user.get(playerData.uuid).asObject().get("name").asString());
             }
         }
 
-        player.isAdmin = perm.isAdmin(player);
+        player.admin(perm.isAdmin(player));
 
-        playerData.uuid(player.uuid);
+        playerData.uuid(player.uuid());
         playerData.connected(true);
         playerData.lastdate(tool.getTime());
         playerData.connserver(serverIP);
@@ -108,9 +108,9 @@ public class PlayerCore {
         );
     }
 
-    public boolean isLocal(Player player) {
+    public boolean isLocal(Playerc player) {
         try {
-            InetAddress addr = InetAddress.getByName(netServer.admins.getInfo(player.uuid).lastIP);
+            InetAddress addr = InetAddress.getByName(netServer.admins.getInfo(player.uuid()).lastIP);
             if (addr.isAnyLocalAddress() || addr.isLoopbackAddress()) return true;
             return NetworkInterface.getByInetAddress(addr) != null;
         } catch (Exception e) {
@@ -118,7 +118,7 @@ public class PlayerCore {
         }
     }
 
-    public boolean login(Player player, String id, String pw) {
+    public boolean login(Playerc player, String id, String pw) {
         try {
             PreparedStatement pstmt = database.conn.prepareStatement("SELECT * from players WHERE accountid=? AND accountpw=?");
             pstmt.setString(1, id);
@@ -131,8 +131,8 @@ public class PlayerCore {
         }
     }
 
-    public void tempban(Player player, LocalTime time, String reason) {
-        PlayerData playerData = playerDB.get(player.uuid);
+    public void tempban(Playerc player, LocalTime time, String reason) {
+        PlayerData playerData = playerDB.get(player.uuid());
         playerData.bantimeset(time.toString());
     }
 }

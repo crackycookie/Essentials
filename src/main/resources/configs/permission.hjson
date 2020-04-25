@@ -12,7 +12,6 @@
     prefix: "[yellow][Admin] %1[orange] : [white]%2"
     permission: [
       color
-      difficulty
       save
       tempban
       save

@@ -279,7 +279,7 @@ public class Server implements Runnable {
             result.add("plugin-version", plugin_version);
             result.add("playtime", playtime.format(DateTimeFormatter.ofPattern("HH:mm:ss")));
             result.add("name", Core.settings.getString("servername"));
-            result.add("mapname", world.getMap().name());
+            result.add("mapname", state.map.name());
             result.add("wave", state.wave);
             result.add("enemy-count", state.enemies);
 

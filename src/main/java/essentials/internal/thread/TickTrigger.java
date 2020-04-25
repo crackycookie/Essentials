@@ -12,10 +12,11 @@ import essentials.internal.CrashReport;
 import essentials.internal.Log;
 import mindustry.content.Blocks;
 import mindustry.core.GameState;
-import mindustry.entities.type.Player;
 import mindustry.game.EventType;
 import mindustry.game.Team;
 import mindustry.gen.Call;
+import mindustry.gen.Groups;
+import mindustry.gen.Playerc;
 import mindustry.type.Item;
 import mindustry.type.ItemType;
 import mindustry.world.Tile;
@@ -46,9 +47,9 @@ public class TickTrigger {
                 }
 
                 if (config.border) {
-                    for (Player p : playerGroup.all()) {
-                        if (p.x > world.width() * 8 || p.x < 0 || p.y > world.height() * 8 || p.y < 0)
-                            Call.onPlayerDeath(p);
+                    for (Playerc p : Groups.player) {
+                        if (p.x() > world.width() * 8 || p.x() < 0 || p.y() > world.height() * 8 || p.y() < 0)
+                            p.dead();
                     }
                 }
 
@@ -89,9 +90,9 @@ public class TickTrigger {
                             state.rules.playerDamageMultiplier = 0.66f;
                             state.rules.playerHealthMultiplier = 0.8f;
                             onSetRules(state.rules);
-                            for (Player p : playerGroup.all()) {
-                                player.sendMessage(new Bundle(playerDB.get(p.uuid).locale).get("pvp-peacetime"));
-                                player.kill();
+                            for (Playerc p : Groups.player) {
+                                player.sendMessage(new Bundle(playerDB.get(p.uuid()).locale).get("pvp-peacetime"));
+                                player.dead();
                             }
                             PvPPeace = false;
                         }
@@ -137,8 +138,8 @@ public class TickTrigger {
                         }
 
                         // 플레이어 플탐 카운트 및 잠수확인
-                        for (Player p : playerGroup.all()) {
-                            PlayerData target = playerDB.get(p.uuid);
+                        for (Playerc p : Groups.player) {
+                            PlayerData target = playerDB.get(p.uuid());
                             boolean kick = false;
 
                             if (target.isLogin) {
@@ -159,7 +160,7 @@ public class TickTrigger {
                                 target.afk_tiley(p.tileY());
 
                                 if (!state.rules.editor) new Exp(p);
-                                if (kick) Call.onKick(p.con, "AFK");
+                                if (kick) Call.onKick(p.con(), "AFK");
                             }
                         }
 
@@ -178,18 +179,18 @@ public class TickTrigger {
                             if (msg.equals("powerblock")) {
                                 Tile target;
 
-                                if (entity.tile.getNearby(0).entity != null) {
-                                    target = entity.tile.getNearby(0);
-                                } else if (entity.tile.getNearby(1).entity != null) {
-                                    target = entity.tile.getNearby(1);
-                                } else if (entity.tile.getNearby(2).entity != null) {
-                                    target = entity.tile.getNearby(2);
-                                } else if (entity.tile.getNearby(3).entity != null) {
-                                    target = entity.tile.getNearby(3);
+                                if (entity.tile().getNearby(0).entity != null) {
+                                    target = entity.tile().getNearby(0);
+                                } else if (entity.tile().getNearby(1).entity != null) {
+                                    target = entity.tile().getNearby(1);
+                                } else if (entity.tile().getNearby(2).entity != null) {
+                                    target = entity.tile().getNearby(2);
+                                } else if (entity.tile().getNearby(3).entity != null) {
+                                    target = entity.tile().getNearby(3);
                                 } else {
                                     return;
                                 }
-                                pluginData.powerblock.add(new PluginData.powerblock(entity.tile, target));
+                                pluginData.powerblock.add(new PluginData.powerblock(entity.tile(), target));
                                 pluginData.messagemonitor.remove(a);
                                 break;
                             } else if (msg.contains("jump")) {
@@ -206,8 +207,7 @@ public class TickTrigger {
                         // 서버간 이동 영역에 플레이어가 있는지 확인
                         for (PluginData.jumpzone value : pluginData.jumpzone) {
                             if (!value.touch) {
-                                for (int ix = 0; ix < playerGroup.size(); ix++) {
-                                    Player player = playerGroup.all().get(ix);
+                                for (Playerc player : Groups.player) {
                                     if (player.tileX() > value.startx && player.tileX() < value.finishx) {
                                         if (player.tileY() > value.starty && player.tileY() < value.finishy) {
                                             String resultIP = value.ip;
@@ -217,8 +217,8 @@ public class TickTrigger {
                                                 resultIP = temp[0];
                                                 port = Integer.parseInt(temp[1]);
                                             }
-                                            Log.info("player.jumped", player.name, resultIP + ":" + port);
-                                            Call.onConnect(player.con, resultIP, port);
+                                            Log.info("player.jumped", player.name(), resultIP + ":" + port);
+                                            Call.onConnect(player.con(), resultIP, port);
                                         }
                                     }
                                 }
@@ -244,16 +244,16 @@ public class TickTrigger {
                             for (Item item : content.items()) {
                                 if (item.type == ItemType.material) {
                                     if (state.teams.get(Team.sharded).cores.isEmpty()) return;
-                                    if (state.teams.get(Team.sharded).cores.first().items.has(item)) {
-                                        int cur = state.teams.get(Team.sharded).cores.first().items.get(item);
+                                    if (state.teams.get(Team.sharded).cores.first().items().has(item)) {
+                                        int cur = state.teams.get(Team.sharded).cores.first().items().get(item);
                                         if (resources.get(item.name) != null) {
                                             if ((cur - resources.get(item.name)) <= -55) {
                                                 StringBuilder using = new StringBuilder();
-                                                for (Player p : playerGroup) {
-                                                    if (p.buildRequest() != null) {
-                                                        for (int c = 0; c < p.buildRequest().block.requirements.length; c++) {
-                                                            if (p.buildRequest().block.requirements[c].item.name.equals(item.name)) {
-                                                                using.append(p.name).append(", ");
+                                                for (Playerc p : Groups.player) {
+                                                    if (p.builder().buildRequest() != null) {
+                                                        for (int c = 0; c < p.builder().buildRequest().block.requirements.length; c++) {
+                                                            if (p.builder().buildRequest().block.requirements[c].item.name.equals(item.name)) {
+                                                                using.append(p.name()).append(", ");
                                                             }
                                                         }
                                                     }
