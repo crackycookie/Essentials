@@ -55,6 +55,7 @@ public class AutoRollback extends TimerTask {
 
     @Override
     public void run() {
+        Thread.currentThread().setName("Essential Auto rollback thread");
         save();
     }
 }

@@ -2,21 +2,20 @@ package essentials.internal.thread;
 
 import arc.Core;
 import arc.Events;
+import arc.struct.ObjectMap;
 import arc.util.Strings;
 import essentials.core.player.PlayerData;
 import essentials.core.plugin.PluginData;
-import essentials.external.PingHost;
 import essentials.feature.Exp;
 import essentials.internal.Bundle;
 import essentials.internal.CrashReport;
 import essentials.internal.Log;
 import mindustry.content.Blocks;
 import mindustry.core.GameState;
+import mindustry.entities.type.Player;
 import mindustry.game.EventType;
 import mindustry.game.Team;
 import mindustry.gen.Call;
-import mindustry.gen.Groups;
-import mindustry.gen.Playerc;
 import mindustry.type.Item;
 import mindustry.type.ItemType;
 import mindustry.world.Tile;
@@ -26,8 +25,6 @@ import org.hjson.JsonObject;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
-import java.util.Map;
 
 import static essentials.Main.*;
 import static essentials.PluginVars.*;
@@ -38,7 +35,7 @@ public class TickTrigger {
     public TickTrigger() {
         Events.on(EventType.Trigger.update, new Runnable() {
             int tick = 0;
-            Map<String, Integer> resources = new HashMap<>();
+            ObjectMap<String, Integer> resources = new ObjectMap<>();
 
             @Override
             public void run() {
@@ -49,14 +46,14 @@ public class TickTrigger {
                 }
 
                 if (config.border) {
-                    for (Playerc p : Groups.player) {
-                        if (p.x() > world.width() * 8 || p.x() < 0 || p.y() > world.height() * 8 || p.y() < 0)
+                    for (Player p : playerGroup.all()) {
+                        if (p.x > world.width() * 8 || p.x < 0 || p.y > world.height() * 8 || p.y < 0)
                             Call.onPlayerDeath(p);
                     }
                 }
 
                 // 1초마다 실행
-                if ((tick % 60) != 0) {
+                if ((tick % 60) == 0) {
                     // 서버 켜진시간 카운트
                     uptime = uptime.plusSeconds(1);
 
@@ -69,7 +66,7 @@ public class TickTrigger {
                     // new changename().start();
 
                     // 임시로 밴당한 유저 감시
-                    for (int a = 0; a < pluginData.banned.size(); a++) {
+                    for (int a = 0; a < pluginData.banned.size; a++) {
                         LocalDateTime time = LocalDateTime.now();
                         if (time.isAfter(pluginData.banned.get(a).getTime())) {
                             pluginData.banned.remove(a);
@@ -92,8 +89,8 @@ public class TickTrigger {
                             state.rules.playerDamageMultiplier = 0.66f;
                             state.rules.playerHealthMultiplier = 0.8f;
                             onSetRules(state.rules);
-                            for (Playerc p : Groups.player) {
-                                player.sendMessage(new Bundle(playerDB.get(p.uuid()).locale).get("pvp-peacetime"));
+                            for (Player p : playerGroup.all()) {
+                                player.sendMessage(new Bundle(playerDB.get(p.uuid).locale).get("pvp-peacetime"));
                                 player.kill();
                             }
                             PvPPeace = false;
@@ -114,11 +111,12 @@ public class TickTrigger {
                     }*/
 
                         // 모든 클라이언트 서버에 대한 인원 총합 카운트
-                        for (int a = 0; a < pluginData.jumptotal.size(); a++) {
+                        for (int a = 0; a < pluginData.jumptotal.size; a++) {
                             int result = 0;
                             for (PluginData.jumpcount value : pluginData.jumpcount) result = result + value.players;
 
                             String str = String.valueOf(result);
+                            // TODO 인원 카운트 다시 만들기
                             int[] digits = new int[str.length()];
                             for (int b = 0; b < str.length(); b++) digits[b] = str.charAt(b) - '0';
 
@@ -132,14 +130,15 @@ public class TickTrigger {
                                     }
                                 }
                             }
+
                             tool.setTileText(tile, Blocks.copperWall, String.valueOf(result));
 
                             pluginData.jumptotal.set(a, new PluginData.jumptotal(tile, result, digits.length));
                         }
 
                         // 플레이어 플탐 카운트 및 잠수확인
-                        for (Playerc p : Groups.player) {
-                            PlayerData target = playerDB.get(p.uuid());
+                        for (Player p : playerGroup.all()) {
+                            PlayerData target = playerDB.get(p.uuid);
                             boolean kick = false;
 
                             if (target.isLogin) {
@@ -160,15 +159,12 @@ public class TickTrigger {
                                 target.afk_tiley(p.tileY());
 
                                 if (!state.rules.editor) new Exp(p);
-                                if (kick) Call.onKick(p.con(), "AFK");
+                                if (kick) Call.onKick(p.con, "AFK");
                             }
-                            if (target.grief_destory_count > 0)
-                                target.grief_destory_count(target.grief_destory_count--);
-                            if (target.grief_build_count > 0) target.grief_build_count(target.grief_build_count--);
                         }
 
                         // 메세지 블럭 감시
-                        for (int a = 0; a < pluginData.messagemonitor.size(); a++) {
+                        for (int a = 0; a < pluginData.messagemonitor.size; a++) {
                             String msg;
                             MessageBlock.MessageBlockEntity entity;
                             try {
@@ -182,18 +178,18 @@ public class TickTrigger {
                             if (msg.equals("powerblock")) {
                                 Tile target;
 
-                                if (entity.tile().getNearby(0).entity != null) {
-                                    target = entity.tile().getNearby(0);
-                                } else if (entity.tile().getNearby(1).entity != null) {
-                                    target = entity.tile().getNearby(1);
-                                } else if (entity.tile().getNearby(2).entity != null) {
-                                    target = entity.tile().getNearby(2);
-                                } else if (entity.tile().getNearby(3).entity != null) {
-                                    target = entity.tile().getNearby(3);
+                                if (entity.tile.getNearby(0).entity != null) {
+                                    target = entity.tile.getNearby(0);
+                                } else if (entity.tile.getNearby(1).entity != null) {
+                                    target = entity.tile.getNearby(1);
+                                } else if (entity.tile.getNearby(2).entity != null) {
+                                    target = entity.tile.getNearby(2);
+                                } else if (entity.tile.getNearby(3).entity != null) {
+                                    target = entity.tile.getNearby(3);
                                 } else {
                                     return;
                                 }
-                                pluginData.powerblock.add(new PluginData.powerblock(entity.tile(), target));
+                                pluginData.powerblock.add(new PluginData.powerblock(entity.tile, target));
                                 pluginData.messagemonitor.remove(a);
                                 break;
                             } else if (msg.contains("jump")) {
@@ -207,41 +203,11 @@ public class TickTrigger {
                             }
                         }
 
-                        // 서버 인원 확인
-                        for (int i = 0; i < pluginData.jumpcount.size(); i++) {
-                            int i2 = i;
-                            PluginData.jumpcount value = pluginData.jumpcount.get(i);
-
-                            new PingHost(value.ip, value.port, result -> {
-                                if (result.name != null) {
-                                    String str = String.valueOf(result.players);
-                                    int[] digits = new int[str.length()];
-                                    for (int a = 0; a < str.length(); a++) digits[a] = str.charAt(a) - '0';
-
-                                    Tile tile = value.getTile();
-                                    if (value.players != result.players) {
-                                        if (value.numbersize != digits.length) {
-                                            for (int px = 0; px < 3; px++) {
-                                                for (int py = 0; py < 5; py++) {
-                                                    Call.onDeconstructFinish(world.tile(tile.x + 4 + px, tile.y + py), Blocks.air, 0);
-                                                }
-                                            }
-                                        }
-                                    }
-                                    tool.setTileText(tile, Blocks.copperWall, str);
-                                    // i 번째 server ip, 포트, x좌표, y좌표, 플레이어 인원, 플레이어 인원 길이
-                                    pluginData.jumpcount.set(i2, new PluginData.jumpcount(value.getTile(), value.ip, value.port, result.players, digits.length));
-                                } else {
-                                    tool.setTileText(value.getTile(), Blocks.copperWall, "no");
-                                }
-                            });
-                        }
-
                         // 서버간 이동 영역에 플레이어가 있는지 확인
                         for (PluginData.jumpzone value : pluginData.jumpzone) {
                             if (!value.touch) {
-                                for (int ix = 0; ix < Groups.player.size(); ix++) {
-                                    Playerc player = Groups.player.index(ix);
+                                for (int ix = 0; ix < playerGroup.size(); ix++) {
+                                    Player player = playerGroup.all().get(ix);
                                     if (player.tileX() > value.startx && player.tileX() < value.finishx) {
                                         if (player.tileY() > value.starty && player.tileY() < value.finishy) {
                                             String resultIP = value.ip;
@@ -251,8 +217,8 @@ public class TickTrigger {
                                                 resultIP = temp[0];
                                                 port = Integer.parseInt(temp[1]);
                                             }
-                                            Log.info("player-jumped", player.name(), resultIP + ":" + port);
-                                            Call.onConnect(player.con(), resultIP, port);
+                                            Log.info("player.jumped", player.name, resultIP + ":" + port);
+                                            Call.onConnect(player.con, resultIP, port);
                                         }
                                     }
                                 }
@@ -262,7 +228,7 @@ public class TickTrigger {
                 }
 
                 // 1분마다 실행
-                if ((tick % 3600) != 0) {
+                if ((tick % 3600) == 0) {
                     try {
                         playerDB.saveAll();
                         pluginData.saveAll();
@@ -272,29 +238,32 @@ public class TickTrigger {
                 }
 
                 // 1.5초마다 실행
-                if ((tick % 90) != 0) {
+                if ((tick % 90) == 0) {
                     if (state.is(GameState.State.playing)) {
-                        for (Item item : content.items()) {
-                            if (item.type == ItemType.material) {
-                                if (state.teams.get(Team.sharded).cores.isEmpty()) return;
-                                if (state.teams.get(Team.sharded).cores.first().items().has(item)) {
-                                    int cur = state.teams.get(Team.sharded).cores.first().items().get(item);
-                                    if (resources.get(item.name) != null) {
-                                        if ((cur - resources.get(item.name)) <= -55) {
-                                            StringBuilder using = new StringBuilder();
-                                            for (Playerc p : Groups.player) {
-                                                if (p.builder().buildRequest().block != null) {
-                                                    for (int c = 0; c < p.builder().buildRequest().block.requirements.length; c++) {
-                                                        if (p.builder().buildRequest().block.requirements[c].item.name.equals(item.name)) {
-                                                            using.append(p.name()).append(", ");
+                        if (config.scanresource) {
+                            for (Item item : content.items()) {
+                                if (item.type == ItemType.material) {
+                                    if (state.teams.get(Team.sharded).cores.isEmpty()) return;
+                                    if (state.teams.get(Team.sharded).cores.first().items.has(item)) {
+                                        int cur = state.teams.get(Team.sharded).cores.first().items.get(item);
+                                        if (resources.get(item.name) != null) {
+                                            if ((cur - resources.get(item.name)) <= -55) {
+                                                StringBuilder using = new StringBuilder();
+                                                for (Player p : playerGroup) {
+                                                    if (p.buildRequest() != null) {
+                                                        for (int c = 0; c < p.buildRequest().block.requirements.length; c++) {
+                                                            if (p.buildRequest().block.requirements[c].item.name.equals(item.name)) {
+                                                                using.append(p.name).append(", ");
+                                                            }
                                                         }
                                                     }
                                                 }
+                                                if (using.length() > 2)
+                                                    tool.sendMessageAll("resource-fast-use", item.name, using);
                                             }
-                                            tool.sendMessageAll("resource-fast-use", item.name, using.substring(0, using.length() - 2));
+                                        } else {
+                                            resources.put(item.name, cur);
                                         }
-                                    } else {
-                                        resources.put(item.name, cur);
                                     }
                                 }
                             }

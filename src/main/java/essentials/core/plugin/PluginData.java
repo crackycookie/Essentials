@@ -1,10 +1,12 @@
 package essentials.core.plugin;
 
+import arc.struct.Array;
+import essentials.internal.CrashReport;
+import essentials.internal.Log;
 import mindustry.world.Tile;
 
 import java.io.*;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -13,61 +15,85 @@ import static mindustry.Vars.world;
 
 public class PluginData {
     // 일회성 플러그인 데이터
-    public ArrayList<nukeblock> nukeblock = new ArrayList<>();
-    public ArrayList<eventservers> eventservers = new ArrayList<>();
-    public ArrayList<powerblock> powerblock = new ArrayList<>();
-    public ArrayList<messagemonitor> messagemonitor = new ArrayList<>();
-    public ArrayList<messagejump> messagejump = new ArrayList<>();
-    public ArrayList<Tile> scancore = new ArrayList<>();
-    public ArrayList<Tile> nukedata = new ArrayList<>();
-    public ArrayList<Tile> nukeposition = new ArrayList<>();
-    public ArrayList<Process> process = new ArrayList<>();
-    public ArrayList<maildata> emailauth = new ArrayList<>();
+    public Array<nukeblock> nukeblock = new Array<>();
+    public Array<eventservers> eventservers = new Array<>();
+    public Array<powerblock> powerblock = new Array<>();
+    public Array<messagemonitor> messagemonitor = new Array<>();
+    public Array<messagejump> messagejump = new Array<>();
+    public Array<Tile> scancore = new Array<>();
+    public Array<Tile> nukedata = new Array<>();
+    public Array<Tile> nukeposition = new Array<>();
+    public Array<Process> process = new Array<>();
 
     // 종료시 저장되는 플러그인 데이터
-    public ArrayList<jumpzone> jumpzone = new ArrayList<>();
-    public ArrayList<jumpcount> jumpcount = new ArrayList<>();
-    public ArrayList<jumptotal> jumptotal = new ArrayList<>();
-    public ArrayList<String> blacklist = new ArrayList<>();
-    public ArrayList<banned> banned = new ArrayList<>();
+    public Array<jumpzone> jumpzone = new Array<>();
+    public Array<jumpcount> jumpcount = new Array<>();
+    public Array<jumptotal> jumptotal = new Array<>();
+    public Array<String> blacklist = new Array<>();
+    public Array<banned> banned = new Array<>();
 
     public void saveAll() throws Exception {
-        Map<String, ArrayList<?>> map = new HashMap<>();
-        map.put("jumpzone", jumpzone);
-        map.put("jumpcount", jumpcount);
-        map.put("jumptotal", jumptotal);
-        map.put("blacklist", blacklist);
-        map.put("banned", banned);
+        Map<String, Object> map = new HashMap<>();
+        map.put("jumpzone", jumpzone.toArray());
+        map.put("jumpcount", jumpcount.toArray());
+        map.put("jumptotal", jumptotal.toArray());
+        map.put("blacklist", blacklist.toArray());
+        map.put("banned", banned.toArray());
 
-        FileOutputStream fos = new FileOutputStream(root.child("data/data.object").file());
-        ObjectOutputStream oos = new ObjectOutputStream(fos);
-        oos.writeObject(map);
-        oos.close();
+        ByteArrayOutputStream b = new ByteArrayOutputStream();
+        ObjectOutputStream o = new ObjectOutputStream(b);
+        o.writeObject(map);
+        root.child("data/PluginData.object").writeBytes(b.toByteArray(), false);
+        o.close();
+        b.close();
     }
 
     @SuppressWarnings("unchecked") // 의도적인 작동임
-    public void loadall() throws Exception {
-        if (!root.child("data/data.object").exists()) {
-            Map<String, ArrayList<Object>> map = new HashMap<>();
-            FileOutputStream fos = new FileOutputStream(root.child("data/PluginData.object").file());
-            ObjectOutputStream oos = new ObjectOutputStream(fos);
-            map.put("jumpzone", new ArrayList<>());
-            map.put("jumpcount", new ArrayList<>());
-            map.put("jumptotal", new ArrayList<>());
-            map.put("blacklist", new ArrayList<>());
-            map.put("banned", new ArrayList<>());
-            oos.writeObject(map);
-            oos.close();
-        } else {
-            FileInputStream fis = new FileInputStream(root.child("data/PluginData.object").file());
-            ObjectInputStream ois = new ObjectInputStream(fis);
-            Map<String, Object> map = (Map<String, Object>) ois.readObject();
-            jumpzone = (ArrayList<jumpzone>) map.get("jumpzone");
-            jumpcount = (ArrayList<jumpcount>) map.get("jumpcount");
-            jumptotal = (ArrayList<jumptotal>) map.get("jumptotal");
-            blacklist = (ArrayList<String>) map.get("blacklist");
-            banned = (ArrayList<banned>) map.get("banned");
-            ois.close();
+    public void loadall() {
+        ByteArrayOutputStream fos = null;
+        ObjectOutputStream oos = null;
+        ByteArrayInputStream fis = null;
+        ObjectInputStream ois = null;
+        try {
+            if (!root.child("data/PluginData.object").exists()) {
+                Map<String, Array<Object>> map = new HashMap<>();
+                map.put("jumpzone", new Array<>());
+                map.put("jumpcount", new Array<>());
+                map.put("jumptotal", new Array<>());
+                map.put("blacklist", new Array<>());
+                map.put("banned", new Array<>());
+
+                fos = new ByteArrayOutputStream();
+                oos = new ObjectOutputStream(fos);
+                oos.writeObject(map);
+
+                root.child("data/PluginData.object").writeBytes(fos.toByteArray(), false);
+                oos.close();
+                fos.close();
+
+            } else {
+                fis = new ByteArrayInputStream(root.child("data/PluginData.object").readBytes());
+                ois = new ObjectInputStream(fis);
+                Map<String, Object> map = (HashMap<String, Object>) ois.readObject();
+                jumpzone = (Array<jumpzone>) map.get("jumpzone");
+                jumpcount = (Array<jumpcount>) map.get("jumpcount");
+                jumptotal = (Array<jumptotal>) map.get("jumptotal");
+                blacklist = (Array<String>) map.get("blacklist");
+                banned = (Array<banned>) map.get("banned");
+                ois.close();
+                fis.close();
+                Log.info("plugindata-loaded");
+            }
+        } catch (Exception i) {
+            try {
+                if (fos != null) fos.close();
+                if (oos != null) oos.close();
+                if (fis != null) fis.close();
+                if (ois != null) ois.close();
+                root.child("data/PluginData.object").delete();
+            } catch (Exception e) {
+                new CrashReport(e);
+            }
         }
     }
 
@@ -116,22 +142,6 @@ public class PluginData {
         public messagejump(Tile tile, String message) {
             this.tile = tile;
             this.message = message;
-        }
-    }
-
-    public static class maildata {
-        public final String authkey;
-        public final String uuid;
-        public final String id;
-        public final String pw;
-        public final String email;
-
-        public maildata(String uuid, String authkey, String id, String pw, String email) {
-            this.authkey = authkey;
-            this.uuid = uuid;
-            this.id = id;
-            this.pw = pw;
-            this.email = email;
         }
     }
 

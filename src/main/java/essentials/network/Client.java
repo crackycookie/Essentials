@@ -2,8 +2,8 @@ package essentials.network;
 
 import essentials.internal.CrashReport;
 import essentials.internal.Log;
+import mindustry.entities.type.Player;
 import mindustry.gen.Call;
-import mindustry.gen.Playerc;
 import mindustry.net.Administration.PlayerInfo;
 import org.hjson.JsonArray;
 import org.hjson.JsonObject;
@@ -24,6 +24,7 @@ import java.util.concurrent.TimeUnit;
 
 import static essentials.Main.*;
 import static mindustry.Vars.netServer;
+import static org.hjson.JsonValue.readJSON;
 
 public class Client extends Thread {
     public Socket socket;
@@ -70,11 +71,11 @@ public class Client extends Thread {
 
             String receive = new String(tool.decrypt(decoder.decode(is.readLine()), spec, cipher));
 
-            if (JsonValue.readJSON(receive).asObject().get("result") != null) {
+            if (readJSON(receive).asObject().get("result") != null) {
                 activated = true;
                 mainThread.execute(new Thread(this));
-                Log.client(JsonValue.readJSON(receive).asObject().get("result").asString());
-                Log.client(disconnected ? "client-reconnect" : "client-enabled", socket.getInetAddress().toString().replace("/", ""));
+                Log.client(readJSON(receive).asObject().get("result").asString());
+                Log.client(disconnected ? "client.reconnected" : "client.enabled", socket.getInetAddress().toString().replace("/", ""));
                 disconnected = false;
             } else {
                 throw new SocketException("Invalid request!");
@@ -97,7 +98,7 @@ public class Client extends Thread {
         }
     }
 
-    public void request(Request request, Playerc player, String message) {
+    public void request(Request request, Player player, String message) {
         JsonObject data = new JsonObject();
         switch (request) {
             case bansync:
@@ -129,7 +130,7 @@ public class Client extends Thread {
                     os.writeBytes(encoder.encodeToString(encrypted) + "\n");
                     os.flush();
 
-                    Log.client("client-banlist-sented");
+                    Log.client("client.banlist.sented");
                 } catch (Exception e) {
                     new CrashReport(e);
                 }
@@ -137,15 +138,15 @@ public class Client extends Thread {
             case chat:
                 try {
                     data.add("type", "chat");
-                    data.add("name", player.name());
+                    data.add("name", player.name);
                     data.add("message", message);
 
                     byte[] encrypted = tool.encrypt(data.toString(), spec, cipher);
                     os.writeBytes(encoder.encodeToString(encrypted) + "\n");
                     os.flush();
 
-                    Call.sendMessage("[#357EC7][SC] [orange]" + player.name() + "[orange]: [white]" + message);
-                    Log.client("client-sent-message", config.clienthost, message);
+                    Call.sendMessage("[#357EC7][SC] [orange]" + player.name + "[orange]: [white]" + message);
+                    Log.client("client.message", config.clienthost, message);
                 } catch (Exception e) {
                     new CrashReport(e);
                 }
@@ -230,15 +231,15 @@ public class Client extends Thread {
             try {
                 JsonObject data;
                 try {
-                    data = JsonValue.readJSON(new String(tool.decrypt(decoder.decode(is.readLine()), spec, cipher))).asObject();
+                    data = readJSON(new String(tool.decrypt(decoder.decode(is.readLine()), spec, cipher))).asObject();
                 } catch (IllegalArgumentException | SocketException e) {
                     disconnected = true;
-                    Log.client("server-disconnected", config.clienthost);
+                    Log.client("server.disconnected", config.clienthost);
                     if (!Thread.currentThread().isInterrupted()) this.wakeup();
                     return;
                 } catch (Exception e) {
                     if (!e.getMessage().equals("Socket closed")) new CrashReport(e);
-                    Log.client("server-disconnected", config.clienthost);
+                    Log.client("server.disconnected", config.clienthost);
 
                     activated = false;
                     try {
@@ -290,18 +291,18 @@ public class Client extends Thread {
                         return;
                     case unbanip:
                         netServer.admins.unbanPlayerIP(data.get("ip").asString());
-                        // TODO make success message
+                        // TODO 성공 메세지 만들기
                         break;
                     case unbanid:
                         netServer.admins.unbanPlayerID(data.get("uuid").asString());
-                        // TODO make success message
+                        // TODO 성공 메세지 만들기
                         break;
                     case datashare:
-                        // TODO make datashare
+                        // TODO 데이터 공유 만들기
                         break;
                 }
             } catch (Exception e) {
-                Log.client("server-disconnected", config.clienthost);
+                Log.client("server.disconnected", config.clienthost);
 
                 activated = false;
                 try {

@@ -1,10 +1,9 @@
 package essentials.core.player;
 
+import arc.struct.ArrayMap;
+
 import java.time.LocalTime;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.Locale;
-import java.util.Map;
 
 import static essentials.Main.config;
 import static essentials.Main.tool;
@@ -49,7 +48,6 @@ public class PlayerData {
     public boolean mute;
     public boolean alert;
     public Long udid;
-    public String email;
     public String accountid;
     public String accountpw;
 
@@ -60,17 +58,13 @@ public class PlayerData {
     public int afk_tilex = 0;
     public int afk_tiley = 0;
 
-    public int grief_build_count = 0;
-    public int grief_destory_count = 0;
-    public ArrayList<short[]> grief_tilelist = new ArrayList<>();
-
     public Locale locale = config.language;
 
-    public PlayerData(boolean error) {
-        this.error = error;
+    public PlayerData() {
+        this.error = true;
     }
 
-    public PlayerData(String name, String uuid, String country, String country_code, String language, boolean isAdmin, int placecount, int breakcount, int killcount, int deathcount, int joincount, int kickcount, int level, int exp, int reqexp, String reqtotalexp, String firstdate, String lastdate, String lastplacename, String lastbreakname, String lastchat, String playtime, int attackclear, int pvpwincount, int pvplosecount, int pvpbreakout, int reactorcount, String bantimeset, String bantime, boolean banned, boolean translate, boolean crosschat, boolean colornick, boolean connected, String connserver, String permission, boolean mute, boolean alert, Long udid, String email, String accountid, String accountpw) {
+    public PlayerData(String name, String uuid, String country, String country_code, String language, boolean isAdmin, int placecount, int breakcount, int killcount, int deathcount, int joincount, int kickcount, int level, int exp, int reqexp, String reqtotalexp, String firstdate, String lastdate, String lastplacename, String lastbreakname, String lastchat, String playtime, int attackclear, int pvpwincount, int pvplosecount, int pvpbreakout, int reactorcount, String bantimeset, String bantime, boolean banned, boolean translate, boolean crosschat, boolean colornick, boolean connected, String connserver, String permission, boolean mute, boolean alert, Long udid, String accountid, String accountpw) {
         this.name = name;
         this.uuid = uuid;
         this.country = country;
@@ -110,7 +104,6 @@ public class PlayerData {
         this.mute = mute;
         this.alert = alert;
         this.udid = udid;
-        this.email = email;
         this.accountid = accountid;
         this.accountpw = accountpw;
 
@@ -274,10 +267,6 @@ public class PlayerData {
         this.udid = udid;
     }
 
-    public void email(String email) {
-        this.email = email;
-    }
-
     public void accountid(String accountid) {
         this.accountid = accountid;
     }
@@ -306,24 +295,12 @@ public class PlayerData {
         this.afk_tiley = afk_tiley;
     }
 
-    public void grief_build_count(int grief_build_count) {
-        this.grief_build_count = grief_build_count;
-    }
-
-    public void grief_destory_count(int grief_destory_count) {
-        this.grief_destory_count = grief_destory_count;
-    }
-
-    public void grief_tilelist(ArrayList<short[]> grief_tilelist) {
-        this.grief_tilelist = grief_tilelist;
-    }
-
     public void locale(Locale locale) {
         this.locale = locale;
     }
 
-    public Map<String, Object> toMap() {
-        Map<String, Object> map = new LinkedHashMap<>();
+    public ArrayMap<String, Object> toMap() {
+        ArrayMap<String, Object> map = new ArrayMap<>();
         map.put("name", name);
         map.put("uuid", uuid);
         map.put("country", country);
@@ -363,7 +340,6 @@ public class PlayerData {
         map.put("mute", mute);
         map.put("alert", alert);
         map.put("udid", udid);
-        map.put("email", email);
         map.put("accountid", accountid);
         map.put("accountpw", accountpw);
         return map;

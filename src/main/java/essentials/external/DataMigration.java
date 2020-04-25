@@ -3,6 +3,7 @@ package essentials.external;
 import arc.Core;
 import arc.files.Fi;
 import essentials.internal.Bundle;
+import essentials.internal.CrashReport;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -16,10 +17,10 @@ public class DataMigration {
 
     public void MigrateDB() {
         try {
-            String stringbuf = new Bundle(locale).get("db-migration") + " ";
+            String stringbuf = new Bundle(locale).get("database.migration") + " ";
             System.out.print("\r" + stringbuf);
 
-            String sql = "INSERT INTO players VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+            String sql = "INSERT INTO players VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
             database.conn.prepareStatement("DELETE FROM players").execute();
             PreparedStatement pstmt = database.conn.prepareStatement(sql);
 
@@ -74,9 +75,8 @@ public class DataMigration {
                 pstmt.setBoolean(37, rs.getBoolean("mute"));
                 pstmt.setBoolean(38, true);
                 pstmt.setLong(39, rs.getLong("udid"));
-                pstmt.setString(40, rs.getString("email"));
-                pstmt.setString(41, rs.getString("accountid"));
-                pstmt.setString(42, rs.getString("accountpw"));
+                pstmt.setString(40, rs.getString("accountid"));
+                pstmt.setString(41, rs.getString("accountpw"));
                 pstmt.execute();
                 current++;
                 System.out.print("\r" + stringbuf + current + "/" + total);
@@ -88,11 +88,10 @@ public class DataMigration {
 
             System.out.print("\r" + stringbuf + current + "/" + total + " " + new Bundle(locale).get("success") + "\n");
 
-            // TODO config update
-            /*config.OldDBMigration(false);
-            config.update();*/
+            config.oldDBMigration(false);
+            config.update();
         } catch (Exception e) {
-            e.printStackTrace();
+            new CrashReport(e);
         }
     }
 
