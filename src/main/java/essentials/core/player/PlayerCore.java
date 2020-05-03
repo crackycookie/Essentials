@@ -3,6 +3,7 @@ package essentials.core.player;
 import essentials.internal.CrashReport;
 import mindustry.entities.type.Player;
 import mindustry.gen.Call;
+import mindustry.gen.Playerc;
 import mindustry.net.Packets;
 
 import java.net.InetAddress;
@@ -122,7 +123,7 @@ public class PlayerCore {
         }
     }
 
-    public boolean login(Player player, String id, String pw) {
+    public boolean login(Playerc player, String id, String pw) {
         try (PreparedStatement pstmt = database.conn.prepareStatement("SELECT * from players WHERE accountid=? AND accountpw=?");
              ResultSet rs = pstmt.executeQuery()) {
             pstmt.setString(1, id);

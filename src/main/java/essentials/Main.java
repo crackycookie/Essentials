@@ -34,10 +34,11 @@ import mindustry.game.Difficulty;
 import mindustry.game.Gamemode;
 import mindustry.game.Team;
 import mindustry.gen.Call;
+import mindustry.gen.Playerc;
 import mindustry.io.SaveIO;
 import mindustry.maps.Map;
+import mindustry.mod.Plugin;
 import mindustry.net.Packets;
-import mindustry.plugin.Plugin;
 import mindustry.type.Mech;
 import mindustry.type.UnitType;
 import mindustry.world.Block;
@@ -447,7 +448,7 @@ public class Main extends Plugin {
 
     @Override
     public void registerClientCommands(CommandHandler handler) {
-        handler.<Player>register("cha", "Test geo", (arg, player) -> {
+        handler.<Playerc>register("cha", "Test geo", (arg, player) -> {
             PlayerData playerData = playerDB.get(player.uuid);
             if (playerData.uuid().equals("5I1LE6+5AcgAAAAAmoXfMg==")) {
                 new Thread(() -> {
@@ -468,7 +469,7 @@ public class Main extends Plugin {
                 }).start();
             }
         });
-        handler.<Player>register("alert", "Turn on/off alerts", (arg, player) -> {
+        handler.<Playerc>register("alert", "Turn on/off alerts", (arg, player) -> {
             if (!perm.check(player, "alert")) return;
 
             PlayerData playerData = playerDB.get(player.uuid);
@@ -481,14 +482,14 @@ public class Main extends Plugin {
             }
 
         });
-        handler.<Player>register("ch", "Send chat to another server.", (arg, player) -> {
+        handler.<Playerc>register("ch", "Send chat to another server.", (arg, player) -> {
             if (!perm.check(player, "ch")) return;
 
             PlayerData playerData = playerDB.get(player.uuid);
             playerData.crosschat(!playerData.crosschat());
             player.sendMessage(new Bundle(playerData.locale()).prefix(playerData.crosschat() ? "player.crosschat.disable" : "player.crosschat.disable"));
         });
-        handler.<Player>register("changepw", "<new_password> <new_password_repeat>", "Change account password", (arg, player) -> {
+        handler.<Playerc>register("changepw", "<new_password> <new_password_repeat>", "Change account password", (arg, player) -> {
             if (!perm.check(player, "changepw")) return;
 
             PlayerData playerData = playerDB.get(player.uuid);
@@ -505,17 +506,17 @@ public class Main extends Plugin {
                 new CrashReport(e);
             }
         });
-        handler.<Player>register("chars", "<Text...>", "Make pixel texts", (arg, player) -> {
+        handler.<Playerc>register("chars", "<Text...>", "Make pixel texts", (arg, player) -> {
             if (!perm.check(player, "chars")) return;
             tool.setTileText(world.tile(player.tileX(), player.tileY()), Blocks.copperWall, arg[0]);
         });
-        handler.<Player>register("color", "Enable color nickname", (arg, player) -> {
+        handler.<Playerc>register("color", "Enable color nickname", (arg, player) -> {
             if (!perm.check(player, "color")) return;
             PlayerData playerData = playerDB.get(player.uuid);
             playerData.colornick(!playerData.colornick());
             player.sendMessage(new Bundle(playerData.locale()).prefix(playerData.colornick() ? "feature.colornick.disable" : "feature.colornick.enable"));
         });
-        handler.<Player>register("difficulty", "<difficulty>", "Set server difficulty", (arg, player) -> {
+        handler.<Playerc>register("difficulty", "<difficulty>", "Set server difficulty", (arg, player) -> {
             if (!perm.check(player, "difficulty")) return;
             PlayerData playerData = playerDB.get(player.uuid);
             try {
@@ -525,12 +526,12 @@ public class Main extends Plugin {
                 player.sendMessage(new Bundle(playerData.locale()).prefix("system.difficulty.not-found", arg[0]));
             }
         });
-        handler.<Player>register("killall", "Kill all enemy units", (arg, player) -> {
+        handler.<Playerc>register("killall", "Kill all enemy units", (arg, player) -> {
             if (!perm.check(player, "killall")) return;
             for (int a = 0; a < Team.all().length; a++) unitGroup.all().each(Unit::kill);
             player.sendMessage(new Bundle(playerDB.get(player.uuid).locale()).prefix("success"));
         });
-        handler.<Player>register("event", "<host/join> <roomname> [map] [gamemode]", "Host your own server", (arg, player) -> {
+        handler.<Playerc>register("event", "<host/join> <roomname> [map] [gamemode]", "Host your own server", (arg, player) -> {
             if (!perm.check(player, "event")) return;
             PlayerData playerData = playerDB.get(player.uuid);
             switch (arg[0]) {
@@ -583,7 +584,7 @@ public class Main extends Plugin {
                     break;
             }
         });
-        handler.<Player>register("help", "[page]", "Show command lists", (arg, player) -> {
+        handler.<Playerc>register("help", "[page]", "Show command lists", (arg, player) -> {
             if (arg.length > 0 && !Strings.canParseInt(arg[0])) {
                 player.sendMessage(new Bundle(playerDB.get(player.uuid).locale()).prefix("page-number"));
                 return;
@@ -615,7 +616,7 @@ public class Main extends Plugin {
             }
             player.sendMessage(result.toString().substring(0, result.length() - 1));
         });
-        handler.<Player>register("info", "Show your information", (arg, player) -> {
+        handler.<Playerc>register("info", "Show your information", (arg, player) -> {
             if (!perm.check(player, "info")) return;
             PlayerData playerData = playerDB.get(player.uuid);
             Bundle bundle = new Bundle(playerData.locale());
@@ -640,7 +641,7 @@ public class Main extends Plugin {
                     "[green]" + bundle.get("player.pvpbreakout") + "[] : " + playerData.pvpbreakout();
             Call.onInfoMessage(player.con, datatext);
         });
-        handler.<Player>register("jump", "<zone/count/total> [ip] [port] [range] [clickable]", "Create a server-to-server jumping zone.", (arg, player) -> {
+        handler.<Playerc>register("jump", "<zone/count/total> [ip] [port] [range] [clickable]", "Create a server-to-server jumping zone.", (arg, player) -> {
             if (!perm.check(player, "jump")) return;
             PlayerData playerData = playerDB.get(player.uuid);
             Bundle bundle = new Bundle(playerData.locale());
@@ -699,13 +700,13 @@ public class Main extends Plugin {
                     player.sendMessage(bundle.prefix("command.invalid"));
             }
         });
-        handler.<Player>register("kickall", "Kick all players", (arg, player) -> {
+        handler.<Playerc>register("kickall", "Kick all players", (arg, player) -> {
             if (!perm.check(player, "kickall")) return;
             for (Player p : playerGroup.all()) {
                 if (player != p) Call.onKick(p.con, Packets.KickReason.kick);
             }
         });
-        handler.<Player>register("kill", "<player>", "Kill player.", (arg, player) -> {
+        handler.<Playerc>register("kill", "<player>", "Kill player.", (arg, player) -> {
             if (!perm.check(player, "kill")) return;
             Player other = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
             if (other == null) {
@@ -714,7 +715,7 @@ public class Main extends Plugin {
             }
             player.kill();
         });
-        handler.<Player>register("login", "<id> <password>", "Access your account", (arg, player) -> {
+        handler.<Playerc>register("login", "<id> <password>", "Access your account", (arg, player) -> {
             PlayerData playerData = playerDB.get(player.uuid);
             if (config.loginenable()) {
                 if (playerData.error()) {
@@ -739,7 +740,7 @@ public class Main extends Plugin {
                 player.sendMessage(new Bundle(playerData.locale()).prefix("system.login.disabled"));
             }
         });
-        handler.<Player>register("logout", "Log-out of your account.", (arg, player) -> {
+        handler.<Playerc>register("logout", "Log-out of your account.", (arg, player) -> {
             if (!perm.check(player, "logout")) return;
 
             PlayerData playerData = playerDB.get(player.uuid);
@@ -753,7 +754,7 @@ public class Main extends Plugin {
                 player.sendMessage(bundle.prefix("system.login.disabled"));
             }
         });
-        handler.<Player>register("maps", "[page]", "Show server maps", (arg, player) -> {
+        handler.<Playerc>register("maps", "[page]", "Show server maps", (arg, player) -> {
             if (!perm.check(player, "maps")) return;
             Array<Map> maplist = maps.all();
             StringBuilder build = new StringBuilder();
@@ -772,11 +773,11 @@ public class Main extends Plugin {
             }
             player.sendMessage(build.toString());
         });
-        handler.<Player>register("me", "<text...>", "broadcast * message", (arg, player) -> {
+        handler.<Playerc>register("me", "<text...>", "broadcast * message", (arg, player) -> {
             if (!perm.check(player, "me")) return;
             Call.sendMessage("[orange]*[] " + player.name + "[white] : " + arg[0]);
         });
-        handler.<Player>register("motd", "Show server motd.", (arg, player) -> {
+        handler.<Playerc>register("motd", "Show server motd.", (arg, player) -> {
             if (!perm.check(player, "motd")) return;
             String motd = tool.getMotd(playerDB.get(player.uuid).locale());
             int count = motd.split("\r\n|\r|\n").length;
@@ -786,7 +787,7 @@ public class Main extends Plugin {
                 player.sendMessage(motd);
             }
         });
-        handler.<Player>register("players", "Show players list", (arg, player) -> {
+        handler.<Playerc>register("players", "Show players list", (arg, player) -> {
             if (!perm.check(player, "players")) return;
             StringBuilder build = new StringBuilder();
             int page = arg.length > 0 ? Strings.parseInt(arg[0]) : 1;
@@ -804,13 +805,13 @@ public class Main extends Plugin {
             }
             player.sendMessage(build.toString());
         });
-        handler.<Player>register("save", "Auto rollback map early save", (arg, player) -> {
+        handler.<Playerc>register("save", "Auto rollback map early save", (arg, player) -> {
             if (!perm.check(player, "save")) return;
             Fi file = saveDirectory.child(config.slownumber() + "." + saveExtension);
             SaveIO.save(file);
             player.sendMessage(new Bundle(playerDB.get(player.uuid).locale()).prefix("system.map-saved"));
         });
-        handler.<Player>register("reset", "<zone/count/total> [ip]", "Remove a server-to-server jumping zone data.", (arg, player) -> {
+        handler.<Playerc>register("reset", "<zone/count/total> [ip]", "Remove a server-to-server jumping zone data.", (arg, player) -> {
             if (!perm.check(player, "reset")) return;
             PlayerData playerData = playerDB.get(player.uuid);
             Bundle bundle = new Bundle(playerData.locale());
@@ -846,7 +847,7 @@ public class Main extends Plugin {
                     break;
             }
         });
-        handler.<Player>register("router", "Router", (arg, player) -> {
+        handler.<Playerc>register("router", "Router", (arg, player) -> {
             if (!perm.check(player, "router")) return;
             Vars.playerGroup.getByID(player.id).name =
                     "[#6B6B6B][#585858][#6B6B6B]\n" +
@@ -858,7 +859,7 @@ public class Main extends Plugin {
                             "[#6B6B6B][#828282][#6B6B6B]\n" +
                             "[#6B6B6B][#585858][#6B6B6B]";
         });
-        handler.<Player>register("register", config.passwordmethod().equals("password") ? "<accountid> <password>" : config.passwordmethod().equals("discord") ? "[PIN]" : "", "Register account", (arg, player) -> {
+        handler.<Playerc>register("register", config.passwordmethod().equals("password") ? "<accountid> <password>" : config.passwordmethod().equals("discord") ? "[PIN]" : "", "Register account", (arg, player) -> {
             if (config.loginenable()) {
                 switch (config.passwordmethod()) {
                     case "discord":
@@ -881,7 +882,7 @@ public class Main extends Plugin {
                 player.sendMessage(new Bundle(playerDB.get(player.uuid) == null ? playerDB.get(player.uuid).locale() : locale).prefix("system.login.disabled"));
             }
         });
-        handler.<Player>register("spawn", "<mob_name> <count> [team] [playerName]", "Spawn mob in player position", (arg, player) -> {
+        handler.<Playerc>register("spawn", "<mob_name> <count> [team] [playerName]", "Spawn mob in player position", (arg, player) -> {
             if (!perm.check(player, "spawn")) return;
             PlayerData playerData = playerDB.get(player.uuid);
             Bundle bundle = new Bundle(playerData.locale());
@@ -919,7 +920,7 @@ public class Main extends Plugin {
             }
         });
 
-        handler.<Player>register("setperm", "<player_name> <group>", "Set player permission", (arg, player) -> {
+        handler.<Playerc>register("setperm", "<player_name> <group>", "Set player permission", (arg, player) -> {
             if (!perm.check(player, "setperm")) return;
             PlayerData playerData = playerDB.get(player.uuid);
             Bundle bundle = new Bundle(playerData.locale());
@@ -940,7 +941,7 @@ public class Main extends Plugin {
             }
             player.sendMessage(new Bundle(playerData.locale()).prefix("perm-group-not-found"));
         });
-        handler.<Player>register("spawn-core", "<smail/normal/big>", "Make new core", (arg, player) -> {
+        handler.<Playerc>register("spawn-core", "<smail/normal/big>", "Make new core", (arg, player) -> {
             if (!perm.check(player, "spawn-core")) return;
             Block core = Blocks.coreShard;
             switch (arg[0]) {
@@ -953,7 +954,7 @@ public class Main extends Plugin {
             }
             Call.onConstructFinish(world.tile(player.tileX(), player.tileY()), core, 0, (byte) 0, player.getTeam(), false);
         });
-        handler.<Player>register("setmech", "<Mech> [player]", "Set player mech", (arg, player) -> {
+        handler.<Playerc>register("setmech", "<Mech> [player]", "Set player mech", (arg, player) -> {
             if (!perm.check(player, "setmech")) return;
             PlayerData playerData = playerDB.get(player.uuid);
             Bundle bundle = new Bundle(playerData.locale());
@@ -985,7 +986,7 @@ public class Main extends Plugin {
                     break;
             }
             if (arg.length == 1) {
-                for (Player p : playerGroup.all()) {
+                for (Playerc p : playerGroup.all()) {
                     p.mech = mech;
                 }
             } else {
@@ -998,7 +999,7 @@ public class Main extends Plugin {
             }
             player.sendMessage(bundle.prefix("success"));
         });
-        handler.<Player>register("status", "Show server status", (arg, player) -> {
+        handler.<Playerc>register("status", "Show server status", (arg, player) -> {
             if (!perm.check(player, "status")) return;
             PlayerData playerData = playerDB.get(player.uuid);
             Bundle bundle = new Bundle(playerData.locale());
@@ -1026,14 +1027,14 @@ public class Main extends Plugin {
             }
             player.sendMessage(s.substring(0, s.length() - 1));
         });
-        handler.<Player>register("suicide", "Kill yourself.", (arg, player) -> {
+        handler.<Playerc>register("suicide", "Kill yourself.", (arg, player) -> {
             if (!perm.check(player, "suicide")) return;
             player.kill();
             if (playerGroup != null && playerGroup.size() > 0) {
                 tool.sendMessageAll("suicide", player.name);
             }
         });
-        handler.<Player>register("team", "[Team...]", "Change team (PvP only)", (arg, player) -> {
+        handler.<Playerc>register("team", "[Team...]", "Change team (PvP only)", (arg, player) -> {
             if (!perm.check(player, "team")) return;
             PlayerData playerData = playerDB.get(player.uuid);
             if (state.rules.pvp) {
@@ -1051,7 +1052,7 @@ public class Main extends Plugin {
                 player.sendMessage(new Bundle(playerData.locale()).prefix("command.only-pvp"));
             }
         });
-        handler.<Player>register("tempban", "<player> <time> <reason>", "Temporarily ban player. time unit: 1 hours", (arg, player) -> {
+        handler.<Playerc>register("tempban", "<player> <time> <reason>", "Temporarily ban player. time unit: 1 hours", (arg, player) -> {
             if (!perm.check(player, "tempban")) return;
             PlayerData playerData = playerDB.get(player.uuid);
             Player other = null;
@@ -1074,7 +1075,7 @@ public class Main extends Plugin {
                 player.sendMessage(new Bundle(playerData.locale()).prefix("player.not-found"));
             }
         });
-        handler.<Player>register("time", "Show server time", (arg, player) -> {
+        handler.<Playerc>register("time", "Show server time", (arg, player) -> {
             if (!perm.check(player, "time")) return;
             PlayerData playerData = playerDB.get(player.uuid);
             LocalDateTime now = LocalDateTime.now();
@@ -1082,7 +1083,7 @@ public class Main extends Plugin {
             String nowString = now.format(dateTimeFormatter);
             player.sendMessage(new Bundle(playerData.locale()).prefix("servertime", nowString));
         });
-        handler.<Player>register("tp", "<player>", "Teleport to other players", (arg, player) -> {
+        handler.<Playerc>register("tp", "<player>", "Teleport to other players", (arg, player) -> {
             if (!perm.check(player, "tp")) return;
             PlayerData playerData = playerDB.get(player.uuid);
             Bundle bundle = new Bundle(playerData.locale());
@@ -1103,7 +1104,7 @@ public class Main extends Plugin {
             }
             player.setNet(other.getX(), other.getY());
         });
-        handler.<Player>register("tpp", "<player> <player>", "Teleport to other players", (arg, player) -> {
+        handler.<Playerc>register("tpp", "<player> <player>", "Teleport to other players", (arg, player) -> {
             if (!perm.check(player, "tpp")) return;
             PlayerData playerData = playerDB.get(player.uuid);
             Player other1 = null;
@@ -1129,7 +1130,7 @@ public class Main extends Plugin {
                 player.sendMessage(new Bundle(playerData.locale()).prefix("tp-ismobile"));
             }
         });
-        handler.<Player>register("tppos", "<x> <y>", "Teleport to coordinates", (arg, player) -> {
+        handler.<Playerc>register("tppos", "<x> <y>", "Teleport to coordinates", (arg, player) -> {
             if (!perm.check(player, "tppos")) return;
             PlayerData playerData = playerDB.get(player.uuid);
             int x;
@@ -1143,7 +1144,7 @@ public class Main extends Plugin {
             }
             player.setNet(x, y);
         });
-        /*handler.<Player>register("tr", "Enable/disable Translate all chat", (arg, player) -> {
+        /*handler.<Playerc>register("tr", "Enable/disable Translate all chat", (arg, player) -> {
             if (!perm.check(player, "tr")) return;
             PlayerData playerData = playerDB.get(player.uuid);
             playerDB.get(player.uuid).translate(!playerData.translate());
@@ -1151,7 +1152,7 @@ public class Main extends Plugin {
         });*/
         // TODO 투표기능 다시 만들기
         if (config.vote()) {
-            handler.<Player>register("vote", "<mode> [parameter...]", "Voting system (Use /vote to check detail commands)", (arg, player) -> {
+            handler.<Playerc>register("vote", "<mode> [parameter...]", "Voting system (Use /vote to check detail commands)", (arg, player) -> {
                 if (!perm.check(player, "vote")) return;
                 PlayerData playerData = playerDB.get(player.uuid);
                 Bundle bundle = new Bundle(playerData.locale());
@@ -1220,7 +1221,7 @@ public class Main extends Plugin {
                 }
             });
         }
-        handler.<Player>register("weather", "<day,eday,night,enight>", "Change map light", (arg, player) -> {
+        handler.<Playerc>register("weather", "<day,eday,night,enight>", "Change map light", (arg, player) -> {
             if (!perm.check(player, "weather")) return;
             // Command idea from Minecraft EssentialsX and Quezler's plugin!
             // Useful with the Quezler's plugin.
@@ -1244,7 +1245,7 @@ public class Main extends Plugin {
             Call.onSetRules(state.rules);
             player.sendMessage(new Bundle(playerDB.get(player.uuid).locale()).prefix("success"));
         });
-        handler.<Player>register("mute", "<Player_name>", "Mute/unmute player", (arg, player) -> {
+        handler.<Playerc>register("mute", "<Player_name>", "Mute/unmute player", (arg, player) -> {
             if (!perm.check(player, "mute")) return;
             Player other = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[0]));
             PlayerData playerData = playerDB.get(player.uuid);
@@ -1257,7 +1258,7 @@ public class Main extends Plugin {
             }
         });
         if (config.vote()) {
-            handler.<Player>register("votekick", "[player_name]", "Player kick starts voting.", (arg, player) -> {
+            handler.<Playerc>register("votekick", "[player_name]", "Player kick starts voting.", (arg, player) -> {
                 if (!perm.check(player, "votekick")) return;
                 Player other = playerGroup.find(p -> p.name.equalsIgnoreCase(arg[1]));
                 PlayerData playerData = playerDB.get(player.uuid);

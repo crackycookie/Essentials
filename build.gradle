@@ -34,8 +34,8 @@ compileJava {
 }
 
 dependencies {
-    compileOnly 'com.github.Anuken.Arc:arc-core:v104.6'
-    compileOnly 'com.github.Anuken.Mindustry:core:v104.6'
+    compileOnly 'com.github.Anuken.Arc:arc-core:-SNAPSHOT'
+    compileOnly 'com.github.Anuken.Mindustry:core:-SNAPSHOT'
     implementation 'com.github.PersonTheCat:hjson-java:master'
     implementation 'de.svenkubiak:jBCrypt:0.4.1'
     implementation('net.dv8tion:JDA:4.1.1_141') {
@@ -44,8 +44,8 @@ dependencies {
     implementation 'org.apache.maven:maven-artifact:3.6.3'
     implementation 'org.jsoup:jsoup:1.13.1'
     implementation 'org.slf4j:slf4j-nop:1.7.30'
-    testCompileOnly 'com.github.Anuken.Arc:arc-core:v104.6'
-    testCompileOnly 'com.github.Anuken.Mindustry:core:v104.6'
+    testCompileOnly 'com.github.Anuken.Arc:arc-core:-SNAPSHOT'
+    testCompileOnly 'com.github.Anuken.Mindustry:core-SNAPSHOT'
     testImplementation 'org.powermock:powermock-module-junit4:2.0.7'
     testImplementation 'org.mockito:mockito-core:3.3.3'
 }

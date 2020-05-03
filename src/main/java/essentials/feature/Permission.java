@@ -5,6 +5,7 @@ import essentials.core.player.PlayerData;
 import essentials.internal.CrashReport;
 import essentials.internal.Log;
 import mindustry.entities.type.Player;
+import mindustry.gen.Playerc;
 import org.hjson.JsonObject;
 import org.hjson.JsonValue;
 import org.hjson.Stringify;
@@ -127,11 +128,11 @@ public class Permission {
         }
     }
 
-    public boolean check(Player player, String command) {
-        PlayerData p = playerDB.get(player.uuid);
+    public boolean check(Playerc player, String command) {
+        PlayerData p = playerDB.get(player.uuid());
 
         if (!p.error()) {
-            JsonObject object = permission_user.get(player.uuid).asObject();
+            JsonObject object = permission_user.get(player.uuid()).asObject();
             if (object != null) {
                 int size = permission.get(object.get("group").asString()).asObject().get("permission").asArray().size();
                 for (int a = 0; a < size; a++) {
