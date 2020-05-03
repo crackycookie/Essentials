@@ -5,11 +5,9 @@ import arc.files.Fi;
 import arc.struct.Array;
 import essentials.internal.CrashReport;
 import essentials.internal.Log;
+import org.slf4j.LoggerFactory;
 
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.InputStream;
+import java.io.*;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.net.URLConnection;
@@ -18,10 +16,10 @@ import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
-import static essentials.PluginVars.DBURL;
+import static essentials.Main.vars;
 
 public class DriverLoader implements Driver {
-    public static URLClassLoader H2URL;
+    URLClassLoader H2URL;
     Fi root = Core.settings.getDataDirectory().child("mods/Essentials/");
     Array<URL> urls = new Array<>();
     private boolean tried = false;
@@ -34,12 +32,13 @@ public class DriverLoader implements Driver {
 
     public DriverLoader() {
         // Ugly source :worried:
+        URLClassLoader cla = null;
         try {
-            for (String url : DBURL) urls.add(new URL(url));
+            for (String url : vars.dburl()) urls.add(new URL(url));
             Fi[] f = root.child("Driver/").list();
 
             for (int a = 0; a < urls.size; a++) {
-                URLClassLoader cla = new URLClassLoader(new URL[]{f[a].file().toURI().toURL()}, this.getClass().getClassLoader());
+                cla = new URLClassLoader(new URL[]{f[a].file().toURI().toURL()}, this.getClass().getClassLoader());
                 String dr = "org.sqlite.JDBC";
                 for (int b = 0; b < urls.size; b++) {
                     if (f[a].name().contains("mariadb")) {
@@ -52,22 +51,26 @@ public class DriverLoader implements Driver {
                 }
                 Driver driver = (Driver) Class.forName(dr, true, cla).getDeclaredConstructor().newInstance();
                 DriverManager.registerDriver(new DriverLoader(driver));
-                if (dr.contains("h2")) H2URL = cla;
+                if (dr.contains("h2")) this.H2URL = cla;
             }
         } catch (Exception e) {
             if (!tried) {
                 tried = true;
                 download();
             } else {
-                e.printStackTrace();
+                LoggerFactory.getLogger(DriverLoader.class).error("Driver load", e);
                 Core.app.exit();
+            }
+        } finally {
+            if (cla != null) try {
+                cla.close();
+            } catch (IOException ignored) {
             }
         }
     }
 
     public static void URLDownload(URL URL, File savepath) {
-        try {
-            BufferedOutputStream outputStream = new BufferedOutputStream(new FileOutputStream(savepath));
+        try (BufferedOutputStream outputStream = new BufferedOutputStream(new FileOutputStream(savepath))) {
             URLConnection urlConnection = URL.openConnection();
             InputStream is = urlConnection.getInputStream();
             int size = urlConnection.getContentLength();
@@ -82,7 +85,6 @@ public class DriverLoader implements Driver {
                 printProgress(startTime, size, byteWritten);
             }
             is.close();
-            outputStream.close();
         } catch (Exception e) {
             new CrashReport(e);
         }
@@ -92,10 +94,9 @@ public class DriverLoader implements Driver {
         long eta = remain == 0 ? 0 :
                 (total - remain) * (System.currentTimeMillis() - startTime) / remain;
 
-        String etaHms = total == 0 ? "N/A" :
-                String.format("%02d:%02d:%02d", TimeUnit.MILLISECONDS.toHours(eta),
-                        TimeUnit.MILLISECONDS.toMinutes(eta) % TimeUnit.HOURS.toMinutes(1),
-                        TimeUnit.MILLISECONDS.toSeconds(eta) % TimeUnit.MINUTES.toSeconds(1));
+        String etaHms = String.format("%02d:%02d:%02d", TimeUnit.MILLISECONDS.toHours(eta),
+                TimeUnit.MILLISECONDS.toMinutes(eta) % TimeUnit.HOURS.toMinutes(1),
+                TimeUnit.MILLISECONDS.toSeconds(eta) % TimeUnit.MINUTES.toSeconds(1));
 
         if (remain > total) {
             throw new IllegalArgumentException();

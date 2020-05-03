@@ -4,6 +4,8 @@ import mindustry.Vars;
 import mindustry.core.Version;
 import org.hjson.JsonValue;
 import org.hjson.Stringify;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
@@ -12,13 +14,13 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 
-import static essentials.Main.config;
-import static essentials.Main.root;
-import static essentials.PluginVars.plugin_version;
+import static essentials.Main.*;
 
 public class CrashReport {
+    Logger log = LoggerFactory.getLogger(CrashReport.class);
+
     public CrashReport(Throwable e) {
-        if (!config.debug) {
+        if (!config.debug()) {
             StringBuilder sb = new StringBuilder();
             sb.append(e.toString()).append("\n");
             StackTraceElement[] element = e.getStackTrace();
@@ -28,10 +30,8 @@ public class CrashReport {
 
             Log.write(Log.LogType.error, text);
             Log.err("Plugin internal error! - " + e.getMessage());
-            if (config.crashreport) {
-                try {
-                    InetAddress address = InetAddress.getByName("mindustry.kr");
-                    Socket socket = new Socket(address, 6560);
+            if (config.crashreport()) {
+                try (Socket socket = new Socket(InetAddress.getByName("mindustry.kr"), 6560)) {
                     BufferedReader is = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
                     DataOutputStream os = new DataOutputStream(socket.getOutputStream());
                     os.writeBytes(e.toString() + "\n");
@@ -44,7 +44,7 @@ public class CrashReport {
                     for (int a = 0; a < Vars.mods.list().size; a++)
                         plugins.append(Vars.mods.list().get(a).name).append(", ");
 
-                    String logs = "플러그인 버전: " + plugin_version + "\n" +
+                    String logs = "플러그인 버전: " + vars.pluginVersion() + "\n" +
                             "서버 버전: " + Version.build + "." + Version.revision + " " + Version.modifier + "\n" +
                             "OS: " + System.getProperty("os.name") + "\n" +
                             "플러그인 목록: " + plugins.toString().substring(0, plugins.length() - 2) + "\n" +
@@ -60,11 +60,11 @@ public class CrashReport {
                         Log.err("Data send failed!");
                     }
                 } catch (Exception ex) {
-                    ex.printStackTrace();
+                    log.warn("Crash Report Error", ex);
                 }
             }
         } else {
-            e.printStackTrace();
+            log.warn("Plugin Error", e);
         }
     }
 }

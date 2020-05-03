@@ -2,35 +2,35 @@ package essentials.feature;
 
 import arc.struct.Array;
 import essentials.core.player.PlayerData;
-import mindustry.gen.Playerc;
+import mindustry.entities.type.Player;
 
 import static essentials.Main.config;
 import static essentials.Main.playerDB;
 
 public class ColorNick implements Runnable {
     private static int colorOffset = 0;
-    public Array<Playerc> targets = new Array<>();
+    public Array<Player> targets = new Array<>();
 
     @Override
     public void run() {
         Thread.currentThread().setName("Essential color nickname thread");
         while (!Thread.currentThread().isInterrupted()) {
-            for (Playerc player : targets) {
-                PlayerData p = playerDB.get(player.uuid());
-                if (p.connected) {
-                    String name = p.name.replaceAll("\\[(.*?)]", "");
+            for (Player player : targets) {
+                PlayerData p = playerDB.get(player.uuid);
+                if (p.connected()) {
+                    String name = p.name().replaceAll("\\[(.*?)]", "");
                     nickcolor(name, player);
                 }
             }
             try {
-                Thread.sleep(config.cupdatei);
-            } catch (InterruptedException ignored) {
-                return;
+                Thread.sleep(config.cupdatei());
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
             }
         }
     }
 
-    private void nickcolor(String name, Playerc player) {
+    private void nickcolor(String name, Player player) {
         StringBuilder stringBuilder = new StringBuilder();
 
         String[] colors = new String[11];
@@ -60,6 +60,6 @@ public class ColorNick implements Runnable {
         for (String s : newnick) {
             stringBuilder.append(s);
         }
-        player.name(stringBuilder.toString());
+        player.name = stringBuilder.toString();
     }
 }

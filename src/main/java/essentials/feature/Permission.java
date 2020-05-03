@@ -4,17 +4,18 @@ import arc.Core;
 import essentials.core.player.PlayerData;
 import essentials.internal.CrashReport;
 import essentials.internal.Log;
-import mindustry.gen.Groups;
-import mindustry.gen.Playerc;
+import mindustry.entities.type.Player;
 import org.hjson.JsonObject;
 import org.hjson.JsonValue;
 import org.hjson.Stringify;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.text.ParseException;
 
 import static essentials.Main.playerDB;
 import static essentials.Main.root;
+import static mindustry.Vars.playerGroup;
 
 public class Permission {
     public JsonObject permission;
@@ -25,12 +26,12 @@ public class Permission {
     public void create(PlayerData playerData) {
         JsonObject object = new JsonObject();
 
-        object.add("name", playerData.name);
+        object.add("name", playerData.name());
         object.add("group", default_group);
-        object.add("prefix", permission.get(playerData.permission).asObject().getString("prefix", "[orange]%1[orange] >[white] %2"));
-        object.add("admin", playerData.isAdmin);
+        object.add("prefix", permission.get(playerData.permission()).asObject().getString("prefix", "[orange]%1[orange] >[white] %2"));
+        object.add("admin", playerData.isAdmin());
 
-        permission_user.add(playerData.uuid, object);
+        permission_user.add(playerData.uuid(), object);
     }
 
     public void update() {
@@ -48,9 +49,9 @@ public class Permission {
 
             if (!isMatch) permission_user.get(p.getName()).asObject().set("group", default_group);
 
-            Playerc player = Groups.player.find(pl -> pl.uuid().equals(p.getName()));
-            if (player != null && !p.getValue().asObject().get("name").asString().equals(player.name())) {
-                player.name(object.getString("name", player.name()));
+            Player player = playerGroup.find(pl -> pl.uuid.equals(p.getName()));
+            if (player != null && !p.getValue().asObject().get("name").asString().equals(player.name)) {
+                player.name = object.getString("name", player.name);
             }
         }
         saveAll();
@@ -114,23 +115,23 @@ public class Permission {
         if (root.child("permission_user.hjson").exists()) {
             try {
                 permission_user = JsonValue.readHjson(root.child("permission_user.hjson").reader()).asObject();
-                for (Playerc p : Groups.player) {
-                    p.admin(isAdmin(p));
+                for (Player p : playerGroup.all()) {
+                    p.isAdmin = isAdmin(p);
                 }
             } catch (IOException e) {
                 // 이것도 유저들이 알아야 고침
-                e.printStackTrace();
+                LoggerFactory.getLogger(Permission.class).error("Permission parsing", e);
             }
         } else {
             root.child("permission_user.hjson").writeString(new JsonObject().toString(Stringify.FORMATTED));
         }
     }
 
-    public boolean check(Playerc player, String command) {
-        PlayerData p = playerDB.get(player.uuid());
+    public boolean check(Player player, String command) {
+        PlayerData p = playerDB.get(player.uuid);
 
-        if (!p.error) {
-            JsonObject object = permission_user.get(player.uuid()).asObject();
+        if (!p.error()) {
+            JsonObject object = permission_user.get(player.uuid).asObject();
             if (object != null) {
                 int size = permission.get(object.get("group").asString()).asObject().get("permission").asArray().size();
                 for (int a = 0; a < size; a++) {
@@ -146,8 +147,14 @@ public class Permission {
         return false;
     }
 
-    public boolean isAdmin(Playerc player) {
-        PlayerData p = playerDB.get(player.uuid());
-        return permission_user.get(p.uuid).asObject().getBoolean("admin", false);
+    public boolean isAdmin(Player player) {
+        if (player == null) {
+            new CrashReport(new Exception("isAdmin player NULL!"));
+            Core.app.dispose();
+            Core.app.exit();
+            System.exit(0);
+        }
+        PlayerData p = playerDB.get(player.uuid);
+        return permission_user.get(p.uuid()).asObject().getBoolean("admin", false);
     }
 }

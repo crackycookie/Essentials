@@ -2,8 +2,8 @@ package essentials.network;
 
 import essentials.internal.CrashReport;
 import essentials.internal.Log;
+import mindustry.entities.type.Player;
 import mindustry.gen.Call;
-import mindustry.gen.Playerc;
 import mindustry.net.Administration.PlayerInfo;
 import org.hjson.JsonArray;
 import org.hjson.JsonObject;
@@ -41,8 +41,8 @@ public class Client extends Thread {
 
     public void wakeup() {
         try {
-            InetAddress address = InetAddress.getByName(config.clienthost);
-            socket = new Socket(address, config.clientport);
+            InetAddress address = InetAddress.getByName(config.clientHost());
+            socket = new Socket(address, config.clientPort());
             socket.setSoTimeout(disconnected ? 2000 : 0);
 
             // 키 생성
@@ -52,7 +52,7 @@ public class Client extends Thread {
             byte[] raw = key.getEncoded();
 
             spec = new SecretKeySpec(raw, "AES");
-            cipher = Cipher.getInstance("AES");
+            cipher = Cipher.getInstance("AES/GCM/NoPadding");
             is = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
             os = new DataOutputStream(socket.getOutputStream());
 
@@ -98,7 +98,7 @@ public class Client extends Thread {
         }
     }
 
-    public void request(Request request, Playerc player, String message) {
+    public void request(Request request, Player player, String message) {
         JsonObject data = new JsonObject();
         switch (request) {
             case bansync:
@@ -138,15 +138,15 @@ public class Client extends Thread {
             case chat:
                 try {
                     data.add("type", "chat");
-                    data.add("name", player.name());
+                    data.add("name", player.name);
                     data.add("message", message);
 
                     byte[] encrypted = tool.encrypt(data.toString(), spec, cipher);
                     os.writeBytes(encoder.encodeToString(encrypted) + "\n");
                     os.flush();
 
-                    Call.sendMessage("[#357EC7][SC] [orange]" + player.name() + "[orange]: [white]" + message);
-                    Log.client("client.message", config.clienthost, message);
+                    Call.sendMessage("[#357EC7][SC] [orange]" + player.name + "[orange]: [white]" + message);
+                    Log.client("client.message", config.clientHost(), message);
                 } catch (Exception e) {
                     new CrashReport(e);
                 }
@@ -234,12 +234,12 @@ public class Client extends Thread {
                     data = readJSON(new String(tool.decrypt(decoder.decode(is.readLine()), spec, cipher))).asObject();
                 } catch (IllegalArgumentException | SocketException e) {
                     disconnected = true;
-                    Log.client("server.disconnected", config.clienthost);
+                    Log.client("server.disconnected", config.clientHost());
                     if (!Thread.currentThread().isInterrupted()) this.wakeup();
                     return;
                 } catch (Exception e) {
                     if (!e.getMessage().equals("Socket closed")) new CrashReport(e);
-                    Log.client("server.disconnected", config.clienthost);
+                    Log.client("server.disconnected", config.clientHost());
 
                     activated = false;
                     try {
@@ -302,7 +302,7 @@ public class Client extends Thread {
                         break;
                 }
             } catch (Exception e) {
-                Log.client("server.disconnected", config.clienthost);
+                Log.client("server.disconnected", config.clientHost());
 
                 activated = false;
                 try {

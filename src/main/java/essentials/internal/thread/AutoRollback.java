@@ -20,7 +20,7 @@ import static mindustry.Vars.*;
 public class AutoRollback extends TimerTask {
     public void save() {
         try {
-            Fi file = saveDirectory.child(config.slotnumber + "." + saveExtension);
+            Fi file = saveDirectory.child(config.slownumber() + "." + saveExtension);
             if (state.is(GameState.State.playing)) SaveIO.save(file);
         } catch (Exception e) {
             new CrashReport(e);
@@ -33,7 +33,7 @@ public class AutoRollback extends TimerTask {
         players.addAll(all);
 
         try {
-            Fi file = saveDirectory.child(config.slotnumber + "." + saveExtension);
+            Fi file = saveDirectory.child(config.slownumber() + "." + saveExtension);
             SaveIO.load(file);
         } catch (SaveIO.SaveException e) {
             new CrashReport(e);

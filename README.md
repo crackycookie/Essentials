@@ -1,6 +1,4 @@
 # Essentials
-[![Build Status](https://travis-ci.org/Kieaer/Essentials.svg?branch=master)](https://travis-ci.org/Kieaer/Essentials)
-
 Add more commands to the server.
 
 I'm getting a lot of suggestions.<br>
@@ -28,8 +26,8 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
 
 | Command | Parameter | Description |
 |:---|:---|:--- |
-| votekick | [player...] | Vote to kick a player, with a cooldown. |
 | vote | &lt;y/n&gt; | Vote to kick the current player. |
+| cha |  | Test geo |
 | alert |  | Turn on/off alerts |
 | ch |  | Send chat to another server. |
 | changepw | &lt;new_password&gt; &lt;new_password_repeat&gt; | Change account password |
@@ -63,21 +61,16 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
 | tp | &lt;player&gt; | Teleport to other players |
 | tpp | &lt;player&gt; &lt;player&gt; | Teleport to other players |
 | tppos | &lt;x&gt; &lt;y&gt; | Teleport to coordinates |
-| tr |  | Enable/disable Translate all chat |
 | vote | &lt;mode&gt; [parameter...] | Voting system (Use /vote to check detail commands) |
 | weather | &lt;day,eday,night,enight&gt; | Change map light |
 | mute | &lt;Player_name&gt; | Mute/unmute player |
-| votekick | [player_name] | Player kick starts voting. |
 
 ## Server commands
 
 | Command | Parameter | Description |
 |:---|:---|:--- |
-| pardon | &lt;ID&gt; | Pardons a votekicked player by ID and allows them to join again. |
-| players |  | List all players currently in game. |
 | saveall |  | desc |
-| gendocs |  | Generate Essentials README.md |
 | setperm | &lt;player_name/uuid&gt; &lt;group&gt; | Set player permission |
 | reload |  | Reload Essential plugin data |
 
-README.md Generated time: 2020-04-19 23:18:48
+README.md Generated time: 2020-05-03 20:59:16

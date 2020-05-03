@@ -5,8 +5,7 @@ import essentials.core.player.PlayerData;
 import essentials.internal.Bundle;
 import essentials.internal.CrashReport;
 import essentials.internal.Log;
-import mindustry.gen.Groups;
-import mindustry.gen.Playerc;
+import mindustry.entities.type.Player;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.ChannelType;
@@ -20,13 +19,14 @@ import javax.security.auth.login.LoginException;
 import java.security.SecureRandom;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.Locale;
 import java.util.Random;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static essentials.Main.*;
-import static essentials.PluginVars.serverIP;
+import static mindustry.Vars.playerGroup;
 
 public class Discord extends ListenerAdapter {
     static ObjectMap<String, Integer> pins = new ObjectMap<>();
@@ -36,21 +36,22 @@ public class Discord extends ListenerAdapter {
     public void start() {
         // TODO discord 방식 변경
         try {
-            jda = new JDABuilder(config.discordtoken).build();
+            jda = new JDABuilder(config.discordtoken()).build();
             jda.awaitReady();
             jda.addEventListener(new Discord());
             Log.info("system.discord.enabled");
         } catch (LoginException e) {
             Log.err("system.discord.error");
-        } catch (InterruptedException ignored) {
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         }
     }
 
-    public void queue(Playerc player) {
-        PlayerData playerData = playerDB.get(player.uuid());
-        Bundle bundle = new Bundle(playerData.error ? locale : playerData.locale);
+    public void queue(Player player) {
+        PlayerData playerData = playerDB.get(player.uuid);
+        Bundle bundle = new Bundle(playerData.error() ? locale : playerData.locale());
         int pin = new Random().nextInt(9999);
-        pins.put(player.name(), pin);
+        pins.put(player.name, pin);
         player.sendMessage(bundle.prefix(true, "discord-pin-queue", pin));
     }
 
@@ -80,20 +81,22 @@ public class Discord extends ListenerAdapter {
                                 send("PW: " + pw);
                                 if (checkpw(e.getAuthor().getName(), name, pw)) {
                                     send("check pw success");
+                                    PreparedStatement pstmt = null;
+                                    ResultSet rs = null;
                                     try {
                                         pw = BCrypt.gensalt(12, SecureRandom.getInstanceStrong());
-                                        PreparedStatement pstmt = database.conn.prepareStatement("SELECT * FROM players WHERE accountid=?");
+                                        pstmt = database.conn.prepareStatement("SELECT * FROM players WHERE accountid=?");
                                         pstmt.setString(1, name);
-                                        ResultSet rs = pstmt.executeQuery();
+                                        rs = pstmt.executeQuery();
                                         if (!rs.next()) {
-                                            Playerc player = Groups.player.find(p -> p.name().equalsIgnoreCase(name));
+                                            Player player = playerGroup.find(p -> p.name.equalsIgnoreCase(name));
                                             if (player != null) {
                                                 Locale lc = tool.getGeo(player);
-                                                boolean register = playerDB.register(player.name(), player.uuid(), lc.getDisplayCountry(), lc.toString(), lc.getDisplayLanguage(), true, serverIP, "default", e.getAuthor().getIdLong(), name, pw);
+                                                boolean register = playerDB.register(player.name, player.uuid, lc.getDisplayCountry(), lc.toString(), lc.getDisplayLanguage(), true, vars.serverIP(), "default", e.getAuthor().getIdLong(), name, pw);
                                                 if (register) {
-                                                    PlayerData playerData = playerDB.load(player.uuid());
-                                                    player.sendMessage(new Bundle(playerData.locale).prefix("register-success"));
-                                                    send(new Bundle(playerData.locale).get("register-success"));
+                                                    PlayerData playerData = playerDB.load(player.uuid);
+                                                    player.sendMessage(new Bundle(playerData.locale()).prefix("register-success"));
+                                                    send(new Bundle(playerData.locale()).get("register-success"));
                                                     break;
                                                 }
                                             } else {
@@ -104,6 +107,15 @@ public class Discord extends ListenerAdapter {
                                         }
                                     } catch (Exception ex) {
                                         new CrashReport(ex);
+                                    } finally {
+                                        if (pstmt != null) try {
+                                            pstmt.close();
+                                        } catch (SQLException ignored) {
+                                        }
+                                        if (rs != null) try {
+                                            rs.close();
+                                        } catch (SQLException ignored) {
+                                        }
                                     }
                                 } else {
                                     send("Check password failed.");

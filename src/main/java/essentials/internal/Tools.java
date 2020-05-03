@@ -4,11 +4,11 @@ import arc.files.Fi;
 import arc.struct.Array;
 import arc.struct.ObjectMap;
 import essentials.core.player.PlayerData;
-import essentials.external.UTF8Control;
 import mindustry.Vars;
+import mindustry.content.Blocks;
+import mindustry.entities.type.Player;
 import mindustry.game.Team;
-import mindustry.gen.Groups;
-import mindustry.gen.Playerc;
+import mindustry.gen.Call;
 import mindustry.type.UnitType;
 import mindustry.world.Block;
 import mindustry.world.Tile;
@@ -18,18 +18,17 @@ import org.jsoup.Jsoup;
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
-import java.util.ResourceBundle;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static essentials.Main.*;
-import static mindustry.Vars.content;
-import static mindustry.Vars.world;
+import static mindustry.Vars.*;
 import static org.hjson.JsonValue.readJSON;
 
 public class Tools {
@@ -45,10 +44,10 @@ public class Tools {
     }
 
     public void sendMessageAll(String value, Object... parameter) {
-        for (Playerc p : Groups.player) {
-            PlayerData playerData = playerDB.get(p.uuid());
-            if (!playerData.error) {
-                p.sendMessage(new Bundle(playerData.locale).get(value, parameter));
+        for (Player p : playerGroup.all()) {
+            PlayerData playerData = playerDB.get(p.uuid);
+            if (!playerData.error()) {
+                p.sendMessage(new Bundle(playerData.locale()).prefix(value, parameter));
             }
         }
     }
@@ -68,7 +67,8 @@ public class Tools {
     }
 
     public Locale getGeo(Object data) {
-        String ip = data instanceof Playerc ? Vars.netServer.admins.getInfo(((Playerc) data).uuid()).lastIP : (String) data;
+        String ip = data instanceof Player ? Vars.netServer.admins.getInfo(((Player) data).uuid).lastIP : (String) data;
+        Locale loc = Locale.US;
         try {
             String json = Jsoup.connect("http://ipapi.co/" + ip + "/json").ignoreContentType(true).timeout(3000).execute().body();
             JsonObject result = readJSON(json).asObject();
@@ -76,21 +76,27 @@ public class Tools {
             if (result.get("reserved") != null) {
                 return locale;
             } else {
-                Locale loc = locale;
-                String lc = result.get("country_code").asString().split(",")[0];
-                if (lc.split("_").length == 2) {
-                    String[] array = lc.split("_");
+                String lc = result.get("languages").asString().split(",")[0];
+
+                if (lc.split("-").length == 2) {
+                    String[] array = lc.split("-");
                     loc = new Locale(array[0], array[1]);
+
+                    if (array[0].equals("zh")) {
+                        return Locale.SIMPLIFIED_CHINESE;
+                    }
                 }
-                try {
+
+                // TODO Bundle 검증 다시 만들기
+                /*try {
                     ResourceBundle RESOURCE_BUNDLE = ResourceBundle.getBundle("bundle.bundle", loc, new UTF8Control());
                     RESOURCE_BUNDLE.getString("success");
                 } catch (Exception e) {
                     for (int a = 0; a < result.get("country_code").asString().split(",").length; a++) {
                         try {
                             lc = result.get("country_code").asString().split(",")[a];
-                            if (lc.split("_").length == 2) {
-                                String[] array = lc.split("_");
+                            if (lc.split("-").length == 2) {
+                                String[] array = lc.split("-");
                                 loc = new Locale(array[0], array[1]);
                             }
                             ResourceBundle RESOURCE_BUNDLE = ResourceBundle.getBundle("bundle.bundle", loc, new UTF8Control());
@@ -99,21 +105,27 @@ public class Tools {
                         } catch (Exception ignored) {
                         }
                     }
-                }
+                }*/
             }
         } catch (Exception e) {
             new CrashReport(e);
         }
-        return locale;
+        return loc;
     }
 
     public String getHostIP() {
+        BufferedReader in = null;
         try {
             URL whatismyip = new URL("http://checkip.amazonaws.com");
-            BufferedReader in = new BufferedReader(new InputStreamReader(whatismyip.openStream()));
+            in = new BufferedReader(new InputStreamReader(whatismyip.openStream()));
             return in.readLine();
         } catch (Exception e) {
             return "127.0.0.1";
+        } finally {
+            if (in != null) try {
+                in.close();
+            } catch (IOException ignored) {
+            }
         }
     }
 
@@ -127,7 +139,7 @@ public class Tools {
     }
 
     // TODO discord/in-game 합치기
-    public boolean checkPassword(Playerc player, String id, String password, String password_repeat) {
+    public boolean checkPassword(Player player, String id, String password, String password_repeat) {
         // 영문(소문자), 숫자, 7~20자리
         String pwPattern = "^(?=.*\\d)(?=.*[a-z]).{7,20}$";
         Matcher matcher = Pattern.compile(pwPattern).matcher(password);
@@ -145,13 +157,13 @@ public class Tools {
             // 정규식에 맞지 않을경우
             player.sendMessage("[green][Essentials] [sky]The password should be 7 ~ 20 letters long and contain alphanumeric characters and special characters!\n" +
                     "[green][Essentials] [sky]비밀번호는 7~20자 내외로 설정해야 하며, 영문과 숫자를 포함해야 합니다!");
-            Log.player("system.password.match.regex", player.name());
+            Log.player("system.password.match.regex", player.name);
             return false;
         } else if (matcher2.find()) {
             // 비밀번호에 ID에 사용된 같은 문자가 4개 이상일경우
             player.sendMessage("[green][Essentials] [sky]Passwords should not be similar to nicknames!\n" +
                     "[green][Essentials] [sky]비밀번호는 닉네임과 비슷하면 안됩니다!");
-            Log.player("system.password.match.name", player.name());
+            Log.player("system.password.match.name", player.name);
             return false;
         } else if (password.contains(id)) {
             // 비밀번호와 ID가 완전히 같은경우
@@ -162,7 +174,7 @@ public class Tools {
             // 비밀번호에 공백이 있을경우
             player.sendMessage("[green][Essentials] [sky]Password must not contain spaces!\n" +
                     "[green][Essentials] [sky]비밀번호에는 공백이 있으면 안됩니다!");
-            Log.player("system.password.match.blank", player.name());
+            Log.player("system.password.match.blank", player.name);
             return false;
         } else if (password.matches("<(.*?)>")) {
             // 비밀번호 형식이 "<비밀번호>" 일경우
@@ -170,7 +182,7 @@ public class Tools {
                     "[green][Essentials] [sky]Use /register password\n" +
                     "[green][Essentials] [green]<[sky]비밀번호[green]>[sky] 형식은 허용되지 않습니다!\n" +
                     "[green][Essentials] [sky]/register password 형식으로 사용하세요.");
-            Log.player("system.password.match.invalid", player.name());
+            Log.player("system.password.match.invalid", player.name);
             return false;
         }
         return true;
@@ -264,9 +276,9 @@ public class Tools {
             for (int a = 0; a < pos.size; a++) {
                 Tile target_tile = world.tile(tile.x + pos.get(a)[0], tile.y + pos.get(a)[1]);
                 if (target[a] == 1) {
-                    target_tile.setBlock(block, Team.sharded);
+                    Call.onConstructFinish(target_tile, block, 100, (byte) 0, Team.sharded, false);
                 } else {
-                    target_tile.remove();
+                    Call.onDeconstructFinish(target_tile, Blocks.air, 100);
                 }
             }
 
@@ -274,8 +286,8 @@ public class Tools {
         }
     }
 
-    public Playerc findPlayer(String name) {
-        return Groups.player.find(p -> p.name().equals(name));
+    public Player findPlayer(String name) {
+        return playerGroup.find(p -> p.name.equals(name));
     }
 
     public Team getTeamByName(String name) {
