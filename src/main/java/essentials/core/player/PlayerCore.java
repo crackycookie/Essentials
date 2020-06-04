@@ -1,8 +1,8 @@
 package essentials.core.player;
 
 import essentials.internal.CrashReport;
-import mindustry.entities.type.Player;
 import mindustry.gen.Call;
+import mindustry.gen.Playerc;
 import mindustry.net.Packets;
 import org.mindrot.jbcrypt.BCrypt;
 
@@ -17,13 +17,13 @@ import static essentials.Main.*;
 import static mindustry.Vars.netServer;
 
 public class PlayerCore {
-    public boolean load(Player player, String... AccountID) {
-        playerDB.remove(player.uuid);
+    public boolean load(Playerc player, String... AccountID) {
+        playerDB.remove(player.uuid());
         PlayerData playerData;
         if (AccountID.length == 0) {
-            playerData = playerDB.load(player.uuid);
+            playerData = playerDB.load(player.uuid());
         } else {
-            playerData = playerDB.load(player.uuid, AccountID);
+            playerData = playerDB.load(player.uuid(), AccountID);
         }
 
         if (playerData.error()) {
@@ -32,15 +32,15 @@ public class PlayerCore {
         }
 
         if (playerData.banned()) {
-            netServer.admins.banPlayerID(player.uuid);
-            Call.onKick(player.con, Packets.KickReason.banned);
+            netServer.admins.banPlayerID(player.uuid());
+            Call.onKick(player.con(), Packets.KickReason.banned);
             return false;
         }
 
         String motd = tool.getMotd(playerData.locale());
         int count = motd.split("\r\n|\r|\n").length;
         if (count > 10) {
-            Call.onInfoMessage(player.con, motd);
+            Call.onInfoMessage(player.con(), motd);
         } else {
             player.sendMessage(motd);
         }
@@ -48,7 +48,7 @@ public class PlayerCore {
         if (playerData.colornick()) colornick.targets.add(player);
 
         String oldUUID = playerData.uuid();
-        playerData.uuid(player.uuid);
+        playerData.uuid(player.uuid());
         playerData.connected(true);
         playerData.lastdate(tool.getTime());
         playerData.connserver(vars.serverIP());
@@ -56,9 +56,9 @@ public class PlayerCore {
         playerData.joincount(playerData.joincount() + 1);
         playerData.login(true);
 
-        perm.setPermission_user(oldUUID, player.uuid);
+        perm.setPermission_user(oldUUID, player.uuid());
 
-        if (perm.permission_user.get(player.uuid) == null) {
+        if (perm.permission_user.get(player.uuid()) == null) {
             perm.create(playerData);
             perm.saveAll();
         } else {
@@ -115,7 +115,7 @@ public class PlayerCore {
         );
     }
 
-    public boolean isLocal(Player player) {
+    public boolean isLocal(Playerc player) {
         try {
             InetAddress addr = InetAddress.getByName(player.con.address);
             if (addr.isAnyLocalAddress() || addr.isLoopbackAddress()) return true;
@@ -143,8 +143,8 @@ public class PlayerCore {
         }
     }
 
-    public void tempban(Player player, LocalTime time, String reason) {
-        PlayerData playerData = playerDB.get(player.uuid);
+    public void tempban(Playerc player, LocalTime time, String reason) {
+        PlayerData playerData = playerDB.get(player.uuid());
         playerData.bantimeset(time.toString());
     }
 }

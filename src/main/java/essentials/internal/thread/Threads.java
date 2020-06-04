@@ -7,15 +7,17 @@ import essentials.internal.Bundle;
 import essentials.internal.CrashReport;
 import mindustry.content.Blocks;
 import mindustry.core.GameState;
-import mindustry.entities.type.Player;
 import mindustry.gen.Call;
+import mindustry.gen.Groups;
+import mindustry.gen.Playerc;
 import mindustry.world.Tile;
 
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
 import static essentials.Main.*;
-import static mindustry.Vars.*;
+import static mindustry.Vars.state;
+import static mindustry.Vars.world;
 
 public class Threads implements Runnable {
     int delay = 0;
@@ -27,9 +29,9 @@ public class Threads implements Runnable {
             try {
                 // 로그인 요청 알림
                 if (delay == 60) {
-                    for (int a = 0; a < playerGroup.size(); a++) {
-                        Player p = playerGroup.all().get(a);
-                        PlayerData playerData = playerDB.get(p.uuid);
+                    for (int a = 0; a < Groups.player.size(); a++) {
+                        Playerc p = Groups.player.get(a);
+                        PlayerData playerData = playerDB.get(p.uuid());
                         if (playerData.error()) {
                             String message;
                             if (playerData.locale() == null) {
@@ -114,7 +116,7 @@ public class Threads implements Runnable {
             } catch (InterruptedException ignored) {
                 Thread.currentThread().interrupt();
             } catch (Exception e) {
-                for (Player p : playerGroup.all())
+                for (Playerc p : Groups.player)
                     Call.onKick(p.con, new Bundle(Locale.ENGLISH).get("plugin-error-kick"));
                 new CrashReport(e);
             }

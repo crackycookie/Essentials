@@ -544,7 +544,7 @@ public class Server implements Runnable {
                                     datatext = bundle.get("player.info") + "<br>" +
                                             "========================================<br>" +
                                             bundle.get("player.name") + ": " + rs.getString("name") + "<br>" +
-                                            bundle.get("player.uuid") + ": " + rs.getString("uuid") + "<br>" +
+                                            bundle.get("player.uuid()") + ": " + rs.getString("uuid") + "<br>" +
                                             bundle.get("player.country") + ": " + db.country() + "<br>" +
                                             bundle.get("player.placecount") + ": " + db.placecount() + " - <b>#" + array.get(0) + "</b><br>" +
                                             bundle.get("player.breakcount") + ": " + db.breakcount() + " - <b>#" + array.get(1) + "</b><br>" +

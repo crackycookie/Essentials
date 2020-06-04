@@ -11,7 +11,6 @@ import essentials.internal.Bundle;
 import essentials.internal.Log;
 import mindustry.content.Blocks;
 import mindustry.core.GameState;
-import mindustry.entities.type.Player;
 import mindustry.game.EventType;
 import mindustry.game.Team;
 import mindustry.gen.Call;
@@ -44,7 +43,7 @@ public class TickTrigger {
                 }
 
                 if (config.border()) {
-                    for (Player p : playerGroup.all()) {
+                    for (Playerc p : Groups.player) {
                         if (p.x > world.width() * 8 || p.x < 0 || p.y > world.height() * 8 || p.y < 0)
                             Call.onPlayerDeath(p);
                     }
@@ -87,7 +86,7 @@ public class TickTrigger {
                             state.rules.playerDamageMultiplier = 0.66f;
                             state.rules.playerHealthMultiplier = 0.8f;
                             onSetRules(state.rules);
-                            for (Player p : playerGroup.all()) {
+                            for (Playerc p : Groups.player) {
                                 player.sendMessage(new Bundle(playerDB.get(p.uuid).locale()).get("pvp-peacetime"));
                                 player.kill();
                             }
@@ -135,8 +134,8 @@ public class TickTrigger {
                         }
 
                         // 플레이어 플탐 카운트 및 잠수확인
-                        for (Player p : playerGroup.all()) {
-                            PlayerData target = playerDB.get(p.uuid);
+                        for (Playerc p : Groups.player) {
+                            PlayerData target = playerDB.get(p.uuid());
                             boolean kick = false;
 
                             if (target.login()) {
@@ -204,8 +203,8 @@ public class TickTrigger {
                         // 서버간 이동 영역에 플레이어가 있는지 확인
                         for (PluginData.jumpzone value : pluginData.jumpzone) {
                             if (!value.touch) {
-                                for (int ix = 0; ix < playerGroup.size(); ix++) {
-                                    Player player = playerGroup.all().get(ix);
+                                for (int ix = 0; ix < Groups.player.size(); ix++) {
+                                    Playerc player = Groups.player.get(ix);
                                     if (player.tileX() > value.startx && player.tileX() < value.finishx) {
                                         if (player.tileY() > value.starty && player.tileY() < value.finishy) {
                                             String resultIP = value.ip;
@@ -216,7 +215,7 @@ public class TickTrigger {
                                                 port = Integer.parseInt(temp[1]);
                                             }
                                             Log.info("player.jumped", player.name, resultIP + ":" + port);
-                                            Call.onConnect(player.con, resultIP, port);
+                                            Call.onConnect(player.con(), resultIP, port);
                                         }
                                     }
                                 }
@@ -237,7 +236,7 @@ public class TickTrigger {
                                         if (resources.get(item.name) != null) {
                                             if ((cur - resources.get(item.name)) <= -55) {
                                                 StringBuilder using = new StringBuilder();
-                                                for (Player p : playerGroup) {
+                                                for (Playerc p : playerGroup) {
                                                     if (p.buildRequest() != null) {
                                                         for (int c = 0; c < p.buildRequest().block.requirements.length; c++) {
                                                             if (p.buildRequest().block.requirements[c].item.name.equals(item.name)) {

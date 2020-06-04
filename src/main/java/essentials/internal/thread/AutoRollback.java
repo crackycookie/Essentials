@@ -5,8 +5,9 @@ import arc.struct.Array;
 import essentials.internal.CrashReport;
 import essentials.internal.Log;
 import mindustry.core.GameState;
-import mindustry.entities.type.Player;
 import mindustry.gen.Call;
+import mindustry.gen.Groups;
+import mindustry.gen.Playerc;
 import mindustry.io.SaveIO;
 
 import java.util.TimerTask;
@@ -26,8 +27,8 @@ public class AutoRollback extends TimerTask {
     }
 
     public void load() {
-        Array<Player> players = new Array<>();
-        for (Player p : playerGroup.all()) {
+        Array<Playerc> players = new Array<>();
+        for (Playerc p : Groups.player) {
             players.add(p);
             p.setDead(true);
         }
@@ -42,7 +43,7 @@ public class AutoRollback extends TimerTask {
 
             logic.play();
 
-            for (Player p : players) {
+            for (Playerc p : players) {
                 if (p.con == null) continue;
 
                 p.reset();

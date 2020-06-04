@@ -25,7 +25,7 @@ public class Exp {
         target.reqtotalexp(reqtotalexp);
 
         if (currentlevel < level && currentlevel > config.alarmLevel() && config.levelUpAlarm())
-            Call.onInfoToast(new Bundle(target.locale()).get("player.levelup", target.name(), level), 600);
+            Call.onInfoToast(new Bundle(target.locale()).get("player.levelup", target.name() (), level),600);
     }
 
     double calcXpForLevel(int level) {
