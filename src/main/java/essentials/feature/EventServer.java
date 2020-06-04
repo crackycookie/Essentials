@@ -7,9 +7,7 @@ import essentials.external.PingHost;
 import essentials.internal.CrashReport;
 import essentials.internal.Log;
 import mindustry.game.Gamemode;
-import org.codehaus.plexus.util.FileUtils;
 import org.hjson.JsonObject;
-import org.jsoup.Jsoup;
 
 import java.io.File;
 import java.io.IOException;
@@ -25,9 +23,10 @@ public class EventServer {
 
     public boolean create(String roomname, String map, String gamemode, int port) {
         try {
-            JsonObject json = readJSON(Jsoup.connect("https://api.github.com/repos/kieaer/Essentials/releases/latest").ignoreContentType(true).execute().body()).asObject();
-            String url = json.get("assets").asObject().get("0").asObject().get("browser_download_url").asString();
-            FileUtils.copyURLToFile(new URL(url), new File(Paths.get("").toAbsolutePath().toString() + "/config/mods/Essentials/temp/" + roomname + "/server.jar"));
+            JsonObject json = readJSON(tool.getWebContent("https://api.github.com/repos/anuken/Mindustry/releases/latest")).asObject();
+            String url = json.get("assets").asArray().get(0).asObject().get("browser_download_url").asString();
+            root.child("temp").child(roomname).mkdirs();
+            tool.URLDownload(new URL(url), root.child("temp/" + roomname + "/server.jar").file());
             EventService service = new EventService(roomname, map, Gamemode.valueOf(gamemode), port);
             service.start();
             Thread.sleep(5000);
@@ -60,13 +59,14 @@ public class EventServer {
                 pb.directory(new File(Paths.get("").toAbsolutePath().toString() + "/config/mods/Essentials/temp/" + roomname));
                 pb.inheritIO().redirectOutput(Core.settings.getDataDirectory().child("test.txt").file());
                 p = pb.start();
+                sleep(2000);
                 eventServer.servers.add(p);
                 if (p.isAlive()) Log.info(roomname + " Event serer online!");
 
                 TimerTask t = new TimerTask() {
                     @Override
                     public void run() {
-                        new PingHost("localhost", port, result -> {
+                        new PingHost("127.0.0.1", port, result -> {
                             if (disablecount > 300) {
                                 try {
                                     JsonObject settings = readJSON(root.child("data/data.json").reader()).asObject();

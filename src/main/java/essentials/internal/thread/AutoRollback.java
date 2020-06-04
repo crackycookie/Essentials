@@ -4,23 +4,21 @@ import arc.files.Fi;
 import arc.struct.Array;
 import essentials.internal.CrashReport;
 import essentials.internal.Log;
-import mindustry.Vars;
 import mindustry.core.GameState;
-import mindustry.entities.EntityGroup;
+import mindustry.entities.type.Player;
 import mindustry.gen.Call;
-import mindustry.gen.Groups;
-import mindustry.gen.Playerc;
 import mindustry.io.SaveIO;
 
 import java.util.TimerTask;
 
 import static essentials.Main.config;
+import static java.lang.Thread.sleep;
 import static mindustry.Vars.*;
 
 public class AutoRollback extends TimerTask {
     public void save() {
         try {
-            Fi file = saveDirectory.child(config.slownumber() + "." + saveExtension);
+            Fi file = saveDirectory.child(config.slotNumber() + "." + saveExtension);
             if (state.is(GameState.State.playing)) SaveIO.save(file);
         } catch (Exception e) {
             new CrashReport(e);
@@ -28,29 +26,49 @@ public class AutoRollback extends TimerTask {
     }
 
     public void load() {
-        EntityGroup<Playerc> all = Groups.player;
-        Array<Playerc> players = new Array<>();
-        players.addAll(all);
-
-        try {
-            Fi file = saveDirectory.child(config.slownumber() + "." + saveExtension);
-            SaveIO.load(file);
-        } catch (SaveIO.SaveException e) {
-            new CrashReport(e);
+        Array<Player> players = new Array<>();
+        for (Player p : playerGroup.all()) {
+            players.add(p);
+            p.setDead(true);
         }
+
+        logic.reset();
 
         Call.onWorldDataBegin();
 
-        for (Playerc p : players) {
-            Vars.netServer.sendWorldData(p);
-            p.reset();
+        try {
+            Fi file = saveDirectory.child(config.slotNumber() + "." + saveExtension);
+            SaveIO.load(file);
 
-            if (Vars.state.rules.pvp) {
-                p.team(Vars.netServer.assignTeam(p, new Array.ArrayIterable<>(players)));
+            logic.play();
+
+            for (Player p : players) {
+                if (p.con == null) continue;
+
+                p.reset();
+                if (state.rules.pvp) {
+                    p.setTeam(netServer.assignTeam(p, new Array.ArrayIterable<>(players)));
+                }
+                netServer.sendWorldData(p);
             }
+        } catch (SaveIO.SaveException e) {
+            new CrashReport(e);
         }
         Log.info("Map rollbacked.");
-        Call.sendMessage("[green]Map rollbacked.");
+        new Thread(() -> {
+            try {
+                float orignal = state.rules.respawnTime;
+                state.rules.respawnTime = 0f;
+                Call.onSetRules(state.rules);
+                sleep(3000);
+                state.rules.respawnTime = orignal;
+                Call.onSetRules(state.rules);
+            } catch (InterruptedException ignored) {
+                Thread.currentThread().interrupt();
+            }
+
+        }).start();
+        if (state.is(GameState.State.playing)) Call.sendMessage("[green]Map rollbacked.");
     }
 
     @Override

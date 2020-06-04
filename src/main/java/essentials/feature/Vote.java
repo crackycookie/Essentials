@@ -6,7 +6,6 @@ import arc.util.Time;
 import essentials.core.player.PlayerData;
 import essentials.internal.Bundle;
 import essentials.internal.Log;
-import mindustry.Vars;
 import mindustry.entities.type.Player;
 import mindustry.game.EventType;
 import mindustry.game.Gamemode;
@@ -27,38 +26,48 @@ public class Vote {
 
     public Player player;
     public PlayerData playerData;
-    private Bundle bundle;
 
     public Player target;
-    public String reason;
     public Gamemode gamemode;
     public Map map;
 
     public VoteType type;
     public Array<String> voted = new Array<>();
 
-    public double require;
-    public int time = 0;
-    public int message_time = 0;
+    int require;
+    int time = 0;
+    int message_time = 0;
+    int amount;
 
     public Vote(Player player, VoteType voteType, Object... parameters) {
         this.player = player;
         this.playerData = playerDB.get(player.uuid);
-        this.bundle = new Bundle(playerData.locale());
         this.type = voteType;
+        Bundle bundle = new Bundle(playerData.locale());
 
+
+        if (vars.playerData().size < 4) {
+            player.sendMessage(bundle.get("vote.minimal"));
+            return;
+        } else {
+            require = vars.playerData().size > 8 ? 6 : 2 + (vars.playerData().size > 4 ? 1 : 0);
+        }
+
+        tool.sendMessageAll("vote.suggester-name", player.name);
         switch (type) {
             case kick:
                 this.target = (Player) parameters[0];
-                this.reason = (String) parameters[1];
-                tool.sendMessageAll("vote.suggester-name", player.name);
-                tool.sendMessageAll("vote.reason", reason);
-                tool.sendMessageAll("vote.kick", player.name, target.name);
+                tool.sendMessageAll("vote.kick", target.name);
                 break;
             case gameover:
                 tool.sendMessageAll("vote.gameover");
                 break;
             case skipwave:
+                try {
+                    this.amount = Integer.parseInt((String) parameters[0]);
+                } catch (NumberFormatException ignored) {
+                    this.amount = 3;
+                }
                 tool.sendMessageAll("vote.skipwave");
                 break;
             case rollback:
@@ -76,12 +85,9 @@ public class Vote {
             case map:
                 if (parameters[0] instanceof Map) {
                     this.map = (Map) parameters[0];
-                    tool.sendMessageAll("vote.map");
+                    tool.sendMessageAll("vote.map", map.name());
                 }
                 break;
-            default:
-                player.sendMessage(bundle.get("vote.wrong-mode"));
-                return;
         }
 
         timer.scheduleAtFixedRate(counting, 0, 1000);
@@ -92,7 +98,7 @@ public class Vote {
         @Override
         public void run() {
             time++;
-            if (time >= 60) success();
+            if (time >= 60) success(voted.size >= require);
         }
     };
     TimerTask alert = new TimerTask() {
@@ -111,32 +117,37 @@ public class Vote {
     };
 
 
-
-    public void success() {
+    public void success(boolean success) {
         timer.cancel();
         time = 0;
         message_time = 0;
         voted.clear();
 
-        if (voted.size >= require) {
+        // TODO 투표 성공 메세지 bundle 추가
+        if (success) {
             switch (type) {
                 case gameover:
+                    Log.info("Vote gameover passed!");
                     tool.sendMessageAll("vote.gameover.done");
                     Events.fire(new EventType.GameOverEvent(Team.crux));
                     break;
                 case skipwave:
+                    Log.info("Vote skipwave passed!");
                     tool.sendMessageAll("vote.skipwave.done");
-                    for (int a = 0; a < 10; a++) {
+                    for (int a = 0; a < amount; a++) {
                         logic.runWave();
                     }
                     break;
                 case kick:
-                    tool.sendMessageAll("vote.kick.done");
+                    Log.info("Vote kick passed!");
+                    playerDB.get(target.uuid).kickcount(playerDB.get(target.uuid).kickcount() + 1);
+                    tool.sendMessageAll("vote.kick.done", target.name);
                     target.getInfo().lastKicked = Time.millis() + (30 * 60) * 1000;
                     Call.onKick(target.con, Packets.KickReason.vote);
                     Log.write(Log.LogType.player, "log.player.kick");
                     break;
                 case rollback:
+                    Log.info("Vote rollback passed!");
                     tool.sendMessageAll("vote.rollback.done");
                     rollback.load();
                     break;
@@ -149,7 +160,16 @@ public class Vote {
                     // TODO 게임 모드 변경 만들기
                     break;
                 case map:
+                    Log.info("Vote map passed!");
                     tool.sendMessageAll("vote.map.done");
+
+                    Array<Player> players = new Array<>();
+                    for (Player p : playerGroup.all()) {
+                        players.add(p);
+                        p.setDead(true);
+                    }
+
+                    logic.reset();
 
                     Gamemode current = Gamemode.survival;
                     if (state.rules.attackMode) {
@@ -159,16 +179,24 @@ public class Vote {
                     } else if (state.rules.editor) {
                         current = Gamemode.editor;
                     }
-                    world.loadMap(map, (map).applyRules(current));
                     Call.onWorldDataBegin();
 
-                    for (Player p : playerGroup.all()) {
-                        Vars.netServer.sendWorldData(p);
-                        p.reset();
+                    world.loadMap(map, (map).applyRules(current));
 
-                        if (Vars.state.rules.pvp) p.setTeam(Vars.netServer.assignTeam(p, playerGroup.all()));
+                    state.rules = world.getMap().applyRules(current);
+                    Call.onSetRules(state.rules);
+
+                    logic.play();
+
+                    for (Player p : players) {
+                        if (p.con == null) continue;
+
+                        p.reset();
+                        if (state.rules.pvp) {
+                            p.setTeam(netServer.assignTeam(p, new Array.ArrayIterable<>(players)));
+                        }
+                        netServer.sendWorldData(p);
                     }
-                    Log.info("Map rollbacked.");
                     tool.sendMessageAll("vote.map.done");
                     break;
             }
@@ -181,7 +209,7 @@ public class Vote {
                     tool.sendMessageAll("vote.skipwave.fail");
                     break;
                 case kick:
-                    tool.sendMessageAll("vote.kick.fail");
+                    tool.sendMessageAll("vote.kick.fail", target.name);
                     break;
                 case rollback:
                     tool.sendMessageAll("vote.rollback.fail");
@@ -198,7 +226,7 @@ public class Vote {
     }
     public void interrupt() {
         timer.cancel();
-        success();
+        success(voted.size >= require);
     }
 
     public Array<String> getVoted() {
@@ -216,7 +244,7 @@ public class Vote {
 
         if (voted.size >= require) {
             timer.cancel();
-            success();
+            success(true);
         }
     }
 

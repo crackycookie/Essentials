@@ -2,27 +2,24 @@ package essentials.feature;
 
 import arc.Core;
 import essentials.core.player.PlayerData;
+import essentials.internal.Bundle;
 import essentials.internal.CrashReport;
 import essentials.internal.Log;
+import essentials.internal.exception.PluginException;
 import mindustry.entities.type.Player;
-import mindustry.gen.Playerc;
-import org.hjson.JsonObject;
-import org.hjson.JsonValue;
-import org.hjson.Stringify;
+import org.hjson.*;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.text.ParseException;
 
-import static essentials.Main.playerDB;
-import static essentials.Main.root;
+import static essentials.Main.*;
 import static mindustry.Vars.playerGroup;
+import static org.hjson.JsonValue.readHjson;
 
 public class Permission {
     public JsonObject permission;
     public JsonObject permission_user;
     public String default_group = null;
-    public boolean isUse = false;
 
     public void create(PlayerData playerData) {
         JsonObject object = new JsonObject();
@@ -85,8 +82,7 @@ public class Permission {
                                 default_group = name;
                             }
                         } else if (init) {
-                            // TODO 언어별 오류 메세지 추가
-                            throw new IOException("Duplicate default group settings. check permission.hjson");
+                            throw new PluginException(new Bundle(config.locale).get("system.perm.duplicate"));
                         }
                     }
                     if (permission.get(name).asObject().get("inheritance") != null) {
@@ -100,9 +96,25 @@ public class Permission {
                     }
                 }
 
-                if (default_group == null)
-                    throw new ParseException("Please SET default group in permission.hjson file.", 0);
-            } catch (ParseException | IOException e) {
+                if (default_group == null) {
+                    for (JsonObject.Member data : permission) {
+                        String name = data.getName();
+                        if (name.equals("default")) {
+                            default_group = name;
+                            JsonObject json = readHjson(root.child("permission.hjson").reader()).asObject();
+                            JsonArray perms = json.get("default").asObject().get("permission").asArray();
+                            json.get("default").asObject().remove("permission");
+                            json.get("default").asObject().add("default", true);
+                            json.get("default").asObject().add("permission", perms);
+                            root.child("permission.hjson").writeString(json.toString(Stringify.HJSON));
+                        }
+                    }
+                }
+
+                if (default_group == null) {
+                    throw new PluginException(new Bundle(config.locale).get("system.perm.no-default"));
+                }
+            } catch (IOException e) {
                 Log.err(e.getMessage());
                 Core.app.dispose();
                 Core.app.exit();
@@ -117,9 +129,9 @@ public class Permission {
             try {
                 permission_user = JsonValue.readHjson(root.child("permission_user.hjson").reader()).asObject();
                 for (Player p : playerGroup.all()) {
-                    p.isAdmin = isAdmin(p);
+                    p.isAdmin = isAdmin(vars.playerData().find(d -> d.name().equals(p.name)));
                 }
-            } catch (IOException e) {
+            } catch (IOException | ParseException e) {
                 // 이것도 유저들이 알아야 고침
                 LoggerFactory.getLogger(Permission.class).error("Permission parsing", e);
             }
@@ -128,15 +140,16 @@ public class Permission {
         }
     }
 
-    public boolean check(Playerc player, String command) {
-        PlayerData p = playerDB.get(player.uuid());
+    public boolean check(Player player, String command) {
+        PlayerData p = playerDB.get(player.uuid);
 
         if (!p.error()) {
-            JsonObject object = permission_user.get(player.uuid()).asObject();
+            JsonValue object = permission_user.get(player.uuid);
             if (object != null) {
-                int size = permission.get(object.get("group").asString()).asObject().get("permission").asArray().size();
+                JsonObject obj = object.asObject();
+                int size = permission.get(obj.get("group").asString()).asObject().get("permission").asArray().size();
                 for (int a = 0; a < size; a++) {
-                    String permlevel = permission.get(object.get("group").asString()).asObject().get("permission").asArray().get(a).asString();
+                    String permlevel = permission.get(obj.get("group").asString()).asObject().get("permission").asArray().get(a).asString();
                     if (permlevel.equals(command) || permlevel.equals("ALL")) {
                         return true;
                     }
@@ -148,14 +161,24 @@ public class Permission {
         return false;
     }
 
-    public boolean isAdmin(Player player) {
-        if (player == null) {
-            new CrashReport(new Exception("isAdmin player NULL!"));
-            Core.app.dispose();
-            Core.app.exit();
-            System.exit(0);
+    public boolean isAdmin(PlayerData player) {
+        try {
+            if (permission_user.has(player.uuid())) {
+                return permission_user.get(player.uuid()).asObject().getBoolean("admin", false);
+            } else {
+                return false;
+            }
+        } catch (NullPointerException ignored) {
+            return false;
         }
-        PlayerData p = playerDB.get(player.uuid);
-        return permission_user.get(p.uuid()).asObject().getBoolean("admin", false);
+    }
+
+    public void setPermission_user(String old, String newid) {
+        if (!old.equals(newid)) {
+            JsonObject oldJson = permission_user.get(old).asObject();
+            permission_user.set(newid, oldJson);
+            permission_user.remove(old);
+            update();
+        }
     }
 }

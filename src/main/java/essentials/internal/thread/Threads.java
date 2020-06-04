@@ -5,21 +5,17 @@ import essentials.core.plugin.PluginData;
 import essentials.external.PingHost;
 import essentials.internal.Bundle;
 import essentials.internal.CrashReport;
-import mindustry.Vars;
 import mindustry.content.Blocks;
 import mindustry.core.GameState;
 import mindustry.entities.type.Player;
 import mindustry.gen.Call;
 import mindustry.world.Tile;
-import org.hjson.JsonObject;
-import org.jsoup.Jsoup;
 
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
 import static essentials.Main.*;
 import static mindustry.Vars.*;
-import static org.hjson.JsonValue.readJSON;
 
 public class Threads implements Runnable {
     int delay = 0;
@@ -30,19 +26,20 @@ public class Threads implements Runnable {
         while (!Thread.currentThread().isInterrupted()) {
             try {
                 // 로그인 요청 알림
-                if (delay == 20) {
+                if (delay == 60) {
                     for (int a = 0; a < playerGroup.size(); a++) {
                         Player p = playerGroup.all().get(a);
                         PlayerData playerData = playerDB.get(p.uuid);
                         if (playerData.error()) {
                             String message;
-                            String json = Jsoup.connect("http://ipapi.co/" + Vars.netServer.admins.getInfo(p.uuid).lastIP + "/json").ignoreContentType(true).execute().body();
-                            JsonObject result = readJSON(json).asObject();
-                            Locale language = tool.TextToLocale(result.getString("languages", locale.toString()));
-                            if (config.passwordmethod().equals("discord")) {
-                                message = new Bundle(language).get("system.login.require.discord") + "\n" + config.discordlink();
+                            if (playerData.locale() == null) {
+                                playerData.locale(tool.getGeo(p));
+                            }
+
+                            if (config.passwordMethod().equals("discord")) {
+                                message = new Bundle(playerData.locale()).get("system.login.require.discord") + "\n" + config.discordLink();
                             } else {
-                                message = new Bundle(language).get("system.login.require.password");
+                                message = new Bundle(playerData.locale()).get("system.login.require.password");
                             }
                             p.sendMessage(message);
                         }
@@ -62,8 +59,11 @@ public class Threads implements Runnable {
                         Call.setMessageBlockText(null, pluginData.messagejump.get(a).tile, "[green]Working...");
 
                         String[] arr = pluginData.messagejump.get(a).message.split(" ");
-                        String ip = arr[1];
-                        int port = Integer.parseInt(arr[2]);
+                        String ip = arr[0];
+                        int port = 6567;
+                        if (arr.length == 2) {
+                            port = Integer.parseInt(arr[1]);
+                        }
 
                         int fa = a;
                         new PingHost(ip, port, result -> Call.setMessageBlockText(null, pluginData.messagejump.get(fa).tile, result != null ? "[green]" + result.players + " Players in this server." : "[scarlet]Server offline"));
@@ -100,7 +100,15 @@ public class Threads implements Runnable {
                     });
                 }
 
-                perm.isUse = false;
+                // 3초마다 실행
+                if ((delay % 3) == 0) {
+                    try {
+                        playerDB.saveAll();
+                        pluginData.saveAll();
+                    } catch (Exception e) {
+                        new CrashReport(e);
+                    }
+                }
 
                 TimeUnit.SECONDS.sleep(1);
             } catch (InterruptedException ignored) {

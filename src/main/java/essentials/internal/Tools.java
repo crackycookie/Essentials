@@ -4,7 +4,6 @@ import arc.files.Fi;
 import arc.struct.Array;
 import arc.struct.ObjectMap;
 import essentials.core.player.PlayerData;
-import mindustry.Vars;
 import mindustry.content.Blocks;
 import mindustry.entities.type.Player;
 import mindustry.game.Team;
@@ -13,17 +12,22 @@ import mindustry.type.UnitType;
 import mindustry.world.Block;
 import mindustry.world.Tile;
 import org.hjson.JsonObject;
-import org.jsoup.Jsoup;
 
 import javax.crypto.Cipher;
-import javax.crypto.spec.SecretKeySpec;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.GCMParameterSpec;
+import java.io.*;
 import java.net.URL;
+import java.net.URLConnection;
+import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
+import java.util.Base64;
 import java.util.Locale;
+import java.util.Scanner;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -56,59 +60,75 @@ public class Tools {
         return DateTimeFormatter.ofPattern("yy-MM-dd HH:mm:ss").format(LocalDateTime.now());
     }
 
-    public byte[] encrypt(String data, SecretKeySpec spec, Cipher cipher) throws Exception {
-        cipher.init(Cipher.ENCRYPT_MODE, spec);
-        return cipher.doFinal(data.getBytes());
+    public String encrypt(String privateString, SecretKey skey) throws Exception {
+        byte[] iv = new byte[12];
+        (new SecureRandom()).nextBytes(iv);
+
+        Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+        GCMParameterSpec ivSpec = new GCMParameterSpec(16 * Byte.SIZE, iv);
+        cipher.init(Cipher.ENCRYPT_MODE, skey, ivSpec);
+
+        byte[] ciphertext = cipher.doFinal(privateString.getBytes(StandardCharsets.UTF_8));
+        byte[] encrypted = new byte[iv.length + ciphertext.length];
+        System.arraycopy(iv, 0, encrypted, 0, iv.length);
+        System.arraycopy(ciphertext, 0, encrypted, iv.length, ciphertext.length);
+
+        return Base64.getEncoder().encodeToString(encrypted);
     }
 
-    public byte[] decrypt(byte[] data, SecretKeySpec spec, Cipher cipher) throws Exception {
-        cipher.init(Cipher.DECRYPT_MODE, spec);
-        return cipher.doFinal(data);
+    public String decrypt(String encrypted, SecretKey skey) throws Exception {
+        byte[] decoded = Base64.getDecoder().decode(encrypted);
+
+        byte[] iv = Arrays.copyOfRange(decoded, 0, 12);
+
+        Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+        GCMParameterSpec ivSpec = new GCMParameterSpec(16 * Byte.SIZE, iv);
+        cipher.init(Cipher.DECRYPT_MODE, skey, ivSpec);
+
+        byte[] ciphertext = cipher.doFinal(decoded, 12, decoded.length - 12);
+
+        return new String(ciphertext, StandardCharsets.UTF_8);
     }
 
     public Locale getGeo(Object data) {
-        String ip = data instanceof Player ? Vars.netServer.admins.getInfo(((Player) data).uuid).lastIP : (String) data;
+        String ip = data instanceof Player ? netServer.admins.getInfo(((Player) data).uuid).lastIP : (String) data;
         Locale loc = Locale.US;
-        try {
-            String json = Jsoup.connect("http://ipapi.co/" + ip + "/json").ignoreContentType(true).timeout(3000).execute().body();
-            JsonObject result = readJSON(json).asObject();
+        if (ip.equals("<unknown>")) return loc;
+        JsonObject result = readJSON(getWebContent("https://ipapi.co/" + ip + "/json")).asObject();
 
-            if (result.get("reserved") != null) {
-                return locale;
-            } else {
-                String lc = result.get("languages").asString().split(",")[0];
+        if (result.get("reserved") != null) {
+            return config.locale;
+        } else {
+            String lc = result.get("languages").asString().split(",")[0];
 
-                if (lc.split("-").length == 2) {
-                    String[] array = lc.split("-");
-                    loc = new Locale(array[0], array[1]);
+            if (lc.split("-").length == 2) {
+                String[] array = lc.split("-");
+                loc = new Locale(array[0], array[1]);
 
-                    if (array[0].equals("zh")) {
-                        return Locale.SIMPLIFIED_CHINESE;
+                if (array[0].equals("zh")) {
+                    return Locale.SIMPLIFIED_CHINESE;
+                }
+            }
+
+            // TODO Bundle 검증 다시 만들기
+            /*try {
+                ResourceBundle RESOURCE_BUNDLE = ResourceBundle.getBundle("bundle.bundle", loc, new UTF8Control());
+                RESOURCE_BUNDLE.getString("success");
+            } catch (Exception e) {
+                for (int a = 0; a < result.get("country_code").asString().split(",").length; a++) {
+                    try {
+                        lc = result.get("country_code").asString().split(",")[a];
+                        if (lc.split("-").length == 2) {
+                            String[] array = lc.split("-");
+                            loc = new Locale(array[0], array[1]);
+                        }
+                        ResourceBundle RESOURCE_BUNDLE = ResourceBundle.getBundle("bundle.bundle", loc, new UTF8Control());
+                        RESOURCE_BUNDLE.getString("success");
+                        return loc;
+                    } catch (Exception ignored) {
                     }
                 }
-
-                // TODO Bundle 검증 다시 만들기
-                /*try {
-                    ResourceBundle RESOURCE_BUNDLE = ResourceBundle.getBundle("bundle.bundle", loc, new UTF8Control());
-                    RESOURCE_BUNDLE.getString("success");
-                } catch (Exception e) {
-                    for (int a = 0; a < result.get("country_code").asString().split(",").length; a++) {
-                        try {
-                            lc = result.get("country_code").asString().split(",")[a];
-                            if (lc.split("-").length == 2) {
-                                String[] array = lc.split("-");
-                                loc = new Locale(array[0], array[1]);
-                            }
-                            ResourceBundle RESOURCE_BUNDLE = ResourceBundle.getBundle("bundle.bundle", loc, new UTF8Control());
-                            RESOURCE_BUNDLE.getString("success");
-                            return loc;
-                        } catch (Exception ignored) {
-                        }
-                    }
-                }*/
-            }
-        } catch (Exception e) {
-            new CrashReport(e);
+            }*/
         }
         return loc;
     }
@@ -133,7 +153,7 @@ public class Tools {
         if (root.child("motd/" + loc.toString() + ".txt").exists()) {
             return root.child("motd/" + loc.toString() + ".txt").readString();
         } else {
-            Fi file = root.child("motd/motd_" + locale.toString() + ".txt");
+            Fi file = root.child("motd/" + config.locale.toString() + ".txt");
             return file.exists() ? file.readString() : "Welcome to the server!";
         }
     }
@@ -277,7 +297,7 @@ public class Tools {
                 Tile target_tile = world.tile(tile.x + pos.get(a)[0], tile.y + pos.get(a)[1]);
                 if (target[a] == 1) {
                     Call.onConstructFinish(target_tile, block, 100, (byte) 0, Team.sharded, false);
-                } else {
+                } else if (target_tile != null) {
                     Call.onDeconstructFinish(target_tile, Blocks.air, 100);
                 }
             }
@@ -301,5 +321,93 @@ public class Tools {
 
     public UnitType getUnitByName(String name) {
         return content.units().find(unitType -> unitType.name.equals(name));
+    }
+
+    public String getWebContent(String url) {
+        try (Scanner sc = new Scanner(new URL(url).openStream())) {
+            StringBuilder sb = new StringBuilder();
+            while (sc.hasNext()) {
+                sb.append(sc.next());
+            }
+            return sb.toString();
+        } catch (IOException e) {
+            new CrashReport(e);
+        }
+        return null;
+    }
+
+    public static void URLDownload(URL URL, File savepath) {
+        try (BufferedOutputStream outputStream = new BufferedOutputStream(new FileOutputStream(savepath))) {
+            URLConnection urlConnection = URL.openConnection();
+            InputStream is = urlConnection.getInputStream();
+            int size = urlConnection.getContentLength();
+            byte[] buf = new byte[5120];
+            int byteRead;
+            int byteWritten = 0;
+            long startTime = System.currentTimeMillis();
+            while ((byteRead = is.read(buf)) != -1) {
+                outputStream.write(buf, 0, byteRead);
+                byteWritten += byteRead;
+
+                printProgress(startTime, size, byteWritten);
+            }
+            is.close();
+        } catch (Exception e) {
+            new CrashReport(e);
+        }
+    }
+
+    public static void printProgress(long startTime, int total, int remain) {
+        long eta = remain == 0 ? 0 :
+                (total - remain) * (System.currentTimeMillis() - startTime) / remain;
+
+        String etaHms = String.format("%02d:%02d:%02d", TimeUnit.MILLISECONDS.toHours(eta),
+                TimeUnit.MILLISECONDS.toMinutes(eta) % TimeUnit.HOURS.toMinutes(1),
+                TimeUnit.MILLISECONDS.toSeconds(eta) % TimeUnit.MINUTES.toSeconds(1));
+
+        if (remain > total) {
+            throw new IllegalArgumentException();
+        }
+
+        int maxBareSize = 20;
+        int remainPercent = ((20 * remain) / total);
+        char defaultChar = '-';
+        String icon = "*";
+        String bare = new String(new char[maxBareSize]).replace('\0', defaultChar) + "]";
+        StringBuilder bareDone = new StringBuilder();
+        bareDone.append("[");
+        for (int i = 0; i < remainPercent; i++) {
+            bareDone.append(icon);
+        }
+        String bareRemain = bare.substring(remainPercent);
+        System.out.print("\r" + humanReadableByteCount(remain, true) + "/" + humanReadableByteCount(total, true) + "\t" + bareDone + bareRemain + " " + remainPercent * 5 + "%, ETA: " + etaHms);
+        if (remain == total) {
+            System.out.print("\n");
+        }
+    }
+
+    // Source: https://programming.guide/worlds-most-copied-so-snippet.html
+    public static strictfp String humanReadableByteCount(int bytes, boolean si) {
+        int unit = si ? 1000 : 1024;
+        long absBytes = Math.abs(bytes);
+        if (absBytes < unit) return bytes + " B";
+        int exp = (int) (Math.log(absBytes) / Math.log(unit));
+        long th = (long) (Math.pow(unit, exp) * (unit - 0.05));
+        if (exp < 6 && absBytes >= th - ((th & 0xfff) == 0xd00 ? 52 : 0)) exp++;
+        String pre = (si ? "kMGTPE" : "KMGTPE").charAt(exp - 1) + (si ? "" : "i");
+        if (exp > 4) {
+            bytes /= unit;
+            exp -= 1;
+        }
+        return String.format("%.1f %sB", bytes / Math.pow(unit, exp), pre);
+    }
+
+    public String secToTime(long seconds) {
+        long sec = seconds;
+        long min = seconds / 60;
+        long hour = min / 60;
+        long days = hour / 24;
+        return String.format("%d:%02d:%02d:%02d",
+                days % 365, hour % 24, min % 60, sec % 60);
     }
 }

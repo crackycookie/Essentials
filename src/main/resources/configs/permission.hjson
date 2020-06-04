@@ -1,16 +1,20 @@
 {
-  owner: {
+  owner:
+  {
     admin: true
-    prefix: "[sky][Owner] %1[orange] : [white]%2"
-    permission: [
+    prefix: "[sky][Owner] %1[orange] > [white]%2"
+    permission:
+    [
       ALL
     ]
   }
-  admin: {
+  admin:
+  {
     inheritance: newadmin
     admin: true
-    prefix: "[yellow][Admin] %1[orange] : [white]%2"
-    permission: [
+    prefix: "[yellow][Admin] %1[orange] > [white]%2"
+    permission:
+    [
       color
       save
       tempban
@@ -19,11 +23,13 @@
       weather
     ]
   }
-  newadmin: {
+  newadmin:
+  {
     inheritance: default
     admin: true
-    prefix: "[yellow][New admin] %1[orange] : [white]%2"
-    permission: [
+    prefix: "[yellow][New admin] %1[orange] > [white]%2"
+    permission:
+    [
       kill
       me
       tp
@@ -35,9 +41,11 @@
       spawn-core
     ]
   }
-  default: {
+  default:
+  {
     default: true
-    permission: [
+    permission:
+    [
       alert
       ch
       changepw
@@ -49,7 +57,9 @@
       maps
       me
       motd
+      r
       register
+      players
       status
       suicide
       time
